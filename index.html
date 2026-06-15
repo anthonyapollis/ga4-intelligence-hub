@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GA4 Ecommerce Intelligence Hub</title>
+  <meta name="description" content="GA4 · GTM · BigQuery · ML — full-stack analytics portfolio showcasing ecommerce tracking, tag management, pipeline engineering, and machine learning.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="data.js"></script>
+</head>
+<body>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────────────── -->
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:14px">
+    <h1>GA4 Ecommerce Intelligence Hub</h1>
+    <span class="header-badge"><span class="header-dot"></span>Live Stack</span>
+  </div>
+  <nav aria-label="Dashboard sections">
+    <a href="#kpis">KPIs</a>
+    <a href="#journey">Funnel</a>
+    <a href="#gtm">GTM</a>
+    <a href="#bigquery">BigQuery</a>
+    <a href="#ml">ML</a>
+    <a href="#traffic">Traffic</a>
+    <a href="#transactions">Transactions</a>
+    <a href="#events">Events</a>
+    <a href="#ga4setup">GA4 Setup</a>
+    <a href="#bestpractices">Best Practices</a>
+    <a href="#netlify">Netlify</a>
+  </nav>
+</header>
+
+<!-- ─── MAIN ─────────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Analytics Engineering · Portfolio Project</p>
+      <h2 id="heroTitle">GA4 Ecommerce<br>Intelligence Hub</h2>
+      <p id="sourceLine">3-year full-stack analytics: GA4 tracking → GTM tag management → BigQuery BATCH pipeline → ML predictions → Netlify CDN. 13.8M events · 1,096 days · 36-month revenue trend · 3 ML models.</p>
+      <div class="download-strip">
+        <a href="sample_events.csv" download class="dl-btn">⬇ Sample Events CSV</a>
+        <a href="../../../GA4_Analytics_Showcase/gtm/ga4_container_export.json" download class="dl-btn">⬇ GTM Container JSON</a>
+        <a href="../../../GA4_Analytics_Showcase/booklet/ga4_measurement_booklet.html" target="_blank" class="dl-btn primary">📖 Measurement Booklet</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="pulse-card">
+        <span>Total events across 92 days</span>
+        <strong id="heroRows">847,932</strong>
+        <p>GA4 · GTM · BigQuery · Python ML · Netlify CDN</p>
+      </div>
+      <div class="signal-stack" aria-hidden="true">
+        <span style="--w: 100%"></span>
+        <span style="--w: 74%"></span>
+        <span style="--w: 42%"></span>
+        <span style="--w: 22%"></span>
+        <span style="--w: 10%"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPIs -->
+  <section id="kpis" aria-label="Key performance metrics">
+    <div class="kpi-grid" id="kpiGrid"></div>
+  </section>
+
+  <!-- CUSTOMER JOURNEY -->
+  <section class="journey-panel" id="journey">
+    <div>
+      <p class="eyebrow">Ecommerce Funnel — 6 Steps</p>
+      <h2>From first session to purchase</h2>
+    </div>
+    <div class="journey-map" id="journeyMap"></div>
+  </section>
+
+  <!-- DAY GRID -->
+  <section class="panel spotlight">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">BigQuery Export Samples</p>
+        <h2>Two export windows compared</h2>
+      </div>
+      <span>Each CSV = one BigQuery BATCH job export</span>
+    </div>
+    <div class="day-grid" id="dayGrid"></div>
+  </section>
+
+  <!-- FUNNEL + EVENT DIST -->
+  <section class="split">
+    <article class="panel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Conversion Path</p>
+          <h2>Ecommerce funnel</h2>
+        </div>
+        <span id="funnelNote" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="funnel" id="funnelChart"></div>
+    </article>
+    <article class="panel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">All Events</p>
+          <h2>Event distribution</h2>
+        </div>
+      </div>
+      <div class="bars" id="eventBars"></div>
+    </article>
+  </section>
+
+  <!-- GTM CONTAINER CONSOLE -->
+  <section class="gtm-console" id="gtm">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:#1E40AF">Google Tag Manager · Container Console</p>
+        <h2 style="color:#1E2A4A">Container: <span id="gtmContainerId" style="color:var(--blue)">GTM-XXXX9A2</span></h2>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--muted)">v4.2 · Published <span id="gtmPublished"></span></span>
+        <span class="badge badge-new">Live</span>
+      </div>
+    </div>
+
+    <!-- Summary counts -->
+    <div class="kpi-grid" style="margin-bottom:20px" id="gtmSummary"></div>
+
+    <!-- Data flow -->
+    <div style="margin-bottom:20px">
+      <p class="eyebrow" style="margin-bottom:8px">Tag firing architecture</p>
+      <div class="gtm-flow" id="gtmFlow"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="gtm-tabs" id="gtmTabs">
+      <button class="gtm-tab active" data-tab="tags">Tags (9)</button>
+      <button class="gtm-tab" data-tab="triggers">Triggers (10)</button>
+      <button class="gtm-tab" data-tab="variables">Variables (11)</button>
+      <button class="gtm-tab" data-tab="datalayer">DataLayer Push</button>
+      <button class="gtm-tab" data-tab="snippet">GTM Snippet</button>
+    </div>
+
+    <div id="gtmTabContent"></div>
+  </section>
+
+  <!-- BIGQUERY PIPELINE -->
+  <section class="bq-panel" id="bigquery">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:var(--green-dk)">BigQuery · Data Pipeline</p>
+        <h2 style="color:#14532D">GA4 → BigQuery BATCH → ML → Dashboard</h2>
+      </div>
+      <span style="font-size:12px;color:var(--muted)">QueryPriority.BATCH · free shared slot pool on flat-rate · same byte cost on on-demand · 6-hour SLA</span>
+    </div>
+
+    <!-- Pipeline flow diagram -->
+    <div class="pipeline-flow" id="pipelineFlow"></div>
+
+    <!-- Cost comparison table -->
+    <p class="eyebrow" style="margin:20px 0 10px;color:var(--green-dk)">BATCH cost analysis — when it saves money and when it doesn't</p>
+    <div class="cost-table-wrap">
+      <table style="min-width:600px">
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>Relative Cost</th>
+            <th>Slot Cost</th>
+            <th>Billable Bytes</th>
+            <th>SLA</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody id="costTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Query examples -->
+    <p class="eyebrow" style="margin:20px 0 10px;color:var(--green-dk)">Batch extractor queries (7 named)</p>
+    <div class="gtm-grid" id="bqQueries"></div>
+
+    <!-- Python snippet -->
+    <p class="eyebrow" style="margin:20px 0 10px;color:var(--green-dk)">batch_extractor.py — core pattern</p>
+    <div class="code-block" id="bqCodeBlock"></div>
+  </section>
+
+  <!-- ML INTELLIGENCE -->
+  <section class="ml-panel" id="ml">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:var(--violet)">Machine Learning · Predictive Intelligence</p>
+        <h2 style="color:#3B0764">Three models, one BigQuery training set</h2>
+      </div>
+      <span style="font-size:12px;color:var(--muted)" id="mlDisclaimer"></span>
+    </div>
+
+    <div class="ml-models-grid" id="mlModelsGrid"></div>
+
+    <!-- Cart abandonment risk factors -->
+    <div style="margin-top:24px">
+      <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">Cart abandonment risk factors — feature importance</p>
+      <div class="bars" id="abandonmentBars"></div>
+    </div>
+  </section>
+
+  <!-- TRAFFIC BREAKDOWNS -->
+  <section id="traffic">
+    <div class="grid-three">
+      <article class="panel">
+        <p class="eyebrow">Acquisition</p>
+        <h2>Traffic sources</h2>
+        <div class="rank-list" id="sourceList"></div>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">Geography</p>
+        <h2>Top countries</h2>
+        <div class="rank-list" id="countryList"></div>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">Content</p>
+        <h2>Top pages</h2>
+        <div class="rank-list" id="pageList"></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="split">
+    <article class="panel accent-blue">
+      <div class="section-title">
+        <div><p class="eyebrow">Technology</p><h2>Browser mix</h2></div>
+      </div>
+      <div class="bars compact" id="browserBars"></div>
+    </article>
+    <article class="panel accent-gold">
+      <div class="section-title">
+        <div><p class="eyebrow">Channels</p><h2>Medium mix</h2></div>
+      </div>
+      <div class="bars compact" id="mediumBars"></div>
+    </article>
+  </section>
+
+  <!-- DEVICE CONVERSION -->
+  <section class="panel">
+    <div class="section-title">
+      <div><p class="eyebrow">Device Intelligence</p><h2>Conversion rate by device</h2></div>
+      <span>Desktop converts at 3× mobile rate</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Device</th><th>Sessions</th><th>Purchases</th><th>Conversion Rate</th><th>Revenue</th><th>Revenue Share</th></tr>
+        </thead>
+        <tbody id="deviceTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TRACKING PLAN -->
+  <section class="panel" id="tracking-plan">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">Measurement Plan · GA4 Event Taxonomy</p>
+        <h2>18 events tracked across the ecommerce lifecycle</h2>
+      </div>
+      <span>GA4 recommended + custom events</span>
+    </div>
+    <div class="event-plan" id="eventPlan"></div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section class="transaction-panel" id="transactions">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">Transaction Ledger · 40 Sample Orders</p>
+        <h2>Revenue, LTV tier, and purchase propensity</h2>
+      </div>
+      <span>Observed checkout signals + enriched purchase records</span>
+    </div>
+
+    <div class="transaction-summary" id="transactionSummary"></div>
+
+    <div class="split" style="margin-bottom:20px">
+      <div>
+        <h3 style="font-size:15px;margin:0 0 12px;font-weight:700">Revenue by transaction</h3>
+        <div class="bars compact" id="transactionBars"></div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin:0 0 12px;font-weight:700">Observed checkout funnel signals</h3>
+        <div class="rank-list" id="observedTransactions"></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Transaction ID</th><th>Date</th><th>Customer</th>
+            <th>Source / Medium</th><th>Device</th><th>Country</th>
+            <th>Items</th><th>Revenue</th><th>Tax</th><th>Shipping</th>
+            <th>LTV Tier</th><th>Propensity</th>
+          </tr>
+        </thead>
+        <tbody id="transactionTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section class="panel">
+    <div class="section-title">
+      <div><p class="eyebrow">Analytics Intelligence</p><h2>Key findings &amp; recommendations</h2></div>
+    </div>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <!-- RAW EVENTS TABLE -->
+  <section class="panel" id="events">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">Raw Sample · GA4 Event Stream</p>
+        <h2>Filterable event rows from BigQuery export</h2>
+      </div>
+      <label class="search">
+        <span>Filter</span>
+        <input id="eventSearch" type="search" placeholder="event, page, country…">
+      </label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Event</th><th>Page</th>
+            <th>Device</th><th>Country</th><th>Source</th><th>Medium</th>
+          </tr>
+        </thead>
+        <tbody id="eventTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- GA4 SETUP & IMPLEMENTATION -->
+  <section class="ga4-setup-panel" id="ga4setup">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:#1D4ED8">GA4 Property Setup &amp; Implementation</p>
+        <h2 style="color:#1E2A4A">End-to-end: property config → data stream → events → audiences → BigQuery</h2>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-new">Live Property</span>
+        <span style="font-size:12px;color:var(--muted)" id="ga4MeasurementId">G-XXXXXXXXXX</span>
+      </div>
+    </div>
+
+    <!-- Property + Stream Cards -->
+    <div class="ga4-prop-grid" id="ga4PropertyCards"></div>
+
+    <!-- Enhanced Measurement Toggles -->
+    <div style="margin:24px 0 12px">
+      <p class="eyebrow" style="color:#1D4ED8">Enhanced Measurement — auto-collected events</p>
+    </div>
+    <div class="ga4-em-grid" id="ga4EnhancedMeasurement"></div>
+
+    <!-- Custom Dimensions -->
+    <div style="margin:24px 0 12px">
+      <p class="eyebrow" style="color:#1D4ED8">Custom Dimensions &amp; User Properties</p>
+    </div>
+    <div class="gtm-grid" id="ga4CustomDimensions"></div>
+
+    <!-- Audiences -->
+    <div style="margin:24px 0 12px">
+      <p class="eyebrow" style="color:#1D4ED8">GA4 Audiences — remarketing &amp; suppression</p>
+    </div>
+    <div class="ga4-audience-grid" id="ga4Audiences"></div>
+
+    <!-- Key Reports -->
+    <div style="margin:24px 0 12px">
+      <p class="eyebrow" style="color:#1D4ED8">Key GA4 Reports &amp; Explorations used</p>
+    </div>
+    <div class="gtm-grid" id="ga4Reports"></div>
+
+    <!-- Implementation Tabs -->
+    <div style="margin:24px 0 12px">
+      <p class="eyebrow" style="color:#1D4ED8">Implementation code</p>
+    </div>
+    <div class="gtm-tabs" id="ga4ImplTabs">
+      <button class="gtm-tab active" data-impl="gtag">gtag.js (direct)</button>
+      <button class="gtm-tab" data-impl="mp">Measurement Protocol v2</button>
+      <button class="gtm-tab" data-impl="debug">Debug Workflow</button>
+    </div>
+    <div id="ga4ImplContent"></div>
+  </section>
+
+  <!-- BEST PRACTICES & COST SAVINGS -->
+  <section class="bp-panel" id="bestpractices">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:#7C3AED">Best Practices · GA4 · GTM · BigQuery · Cost Savings</p>
+        <h2 style="color:#3B0764">What works, what doesn't, and what it costs</h2>
+      </div>
+      <span style="font-size:12px;color:var(--muted)">3-year evidence-based recommendations from 13.8M events</span>
+    </div>
+
+    <!-- Year-over-Year Growth -->
+    <div style="margin-bottom:20px">
+      <p class="eyebrow" style="color:#7C3AED;margin-bottom:10px">Year-over-year growth — 3-year trajectory</p>
+      <div class="yoy-grid" id="yoyGrid"></div>
+    </div>
+
+    <!-- Best Practice Tabs -->
+    <div class="gtm-tabs" id="bpTabs">
+      <button class="gtm-tab active" data-bp="ga4">GA4 Best Practices</button>
+      <button class="gtm-tab" data-bp="gtm">GTM Best Practices</button>
+      <button class="gtm-tab" data-bp="bigquery">BigQuery Best Practices</button>
+      <button class="gtm-tab" data-bp="costs">Cost Savings</button>
+    </div>
+    <div id="bpContent"></div>
+  </section>
+
+  <!-- NETLIFY CONFIG -->
+  <section class="netlify-panel" id="netlify">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow" style="color:var(--gold)">Netlify Deployment · Why &amp; What</p>
+        <h2 style="color:#78350F">Static CDN with security headers, redirects, and 1-year asset cache</h2>
+      </div>
+      <span style="font-size:12px;color:var(--muted)">Publish dir: <code style="font-family:monospace">.</code> · No build command · Auto-deploy from Git</span>
+    </div>
+
+    <div class="netlify-feature-grid" id="netlifyFeatures"></div>
+
+    <p class="eyebrow" style="margin:20px 0 10px;color:var(--gold)">netlify.toml — production configuration</p>
+    <div class="code-block">
+<span class="cmt"># Netlify deploys this entire folder as-is — no build step needed.</span>
+<span class="cmt"># The GA4 dashboard, booklet, and GTM JSON are all static assets.</span>
+
+[build]
+  publish = <span class="str">"."</span>
+
+<span class="cmt"># Security headers on every response</span>
+[[headers]]
+  for = <span class="str">"/*"</span>
+  [headers.values]
+    X-Frame-Options           = <span class="str">"DENY"</span>
+    X-Content-Type-Options    = <span class="str">"nosniff"</span>
+    Referrer-Policy           = <span class="str">"strict-origin-when-cross-origin"</span>
+    Permissions-Policy        = <span class="str">"camera=(), microphone=(), geolocation=()"</span>
+    Content-Security-Policy   = <span class="str">"default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"</span>
+
+<span class="cmt"># 1-year immutable cache for fingerprinted JS/CSS</span>
+[[headers]]
+  for = <span class="str">"/*.js"</span>
+  [headers.values]
+    Cache-Control = <span class="str">"public, max-age=31536000, immutable"</span>
+
+[[headers]]
+  for = <span class="str">"/*.css"</span>
+  [headers.values]
+    Cache-Control = <span class="str">"public, max-age=31536000, immutable"</span>
+
+<span class="cmt"># Root redirect → main dashboard</span>
+[[redirects]]
+  from   = <span class="str">"/"</span>
+  to     = <span class="str">"/index.html"</span>
+  status = <span class="num">200</span>
+    </div>
+
+    <div class="download-strip" style="margin-top:16px">
+      <a href="netlify.toml" download class="dl-btn">⬇ netlify.toml</a>
+      <a href="#" class="dl-btn primary" onclick="alert('Connect your GitHub repo at netlify.app → New site from Git')">🚀 Deploy to Netlify</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── FOOTER ──────────────────────────────────────────────────────────── -->
+<footer>
+  <strong>GA4 Ecommerce Intelligence Hub</strong>
+  <span>Analytics Engineering Portfolio · Anthony Apollis · anthony.apollis@gmail.com</span>
+  <span style="margin-left:auto;font-size:12px">Stack: GA4 · GTM · BigQuery BATCH · Python scikit-learn · Netlify</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

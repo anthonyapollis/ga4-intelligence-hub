@@ -1,0 +1,56 @@
+# GA4 Ecommerce Intelligence Hub — Netlify Configuration
+# Anthony Apollis — Analytics Engineering Portfolio
+# Deployed as a fully static site — no build command, no framework.
+# All assets (HTML, CSS, JS, JSON, CSV) are served directly from the CDN.
+
+[build]
+  publish = "."
+
+# ── Root rewrite ──────────────────────────────────────────────────────────
+[[redirects]]
+  from   = "/"
+  to     = "/index.html"
+  status = 200
+
+# ── Security headers — applied on every response ───────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Content-Security-Policy   = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com; frame-src 'none'"
+
+# ── 1-year immutable cache for static JS / CSS ────────────────────────────
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Short cache for HTML (always fresh) ──────────────────────────────────
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
+
+# ── JSON downloads served with correct MIME ──────────────────────────────
+[[headers]]
+  for = "/*.json"
+  [headers.values]
+    Content-Type  = "application/json; charset=utf-8"
+    Cache-Control = "public, max-age=86400"
+
+# ── CSV downloads ────────────────────────────────────────────────────────
+[[headers]]
+  for = "/*.csv"
+  [headers.values]
+    Content-Type              = "text/csv; charset=utf-8"
+    Content-Disposition       = "attachment"
+    Cache-Control             = "public, max-age=86400"

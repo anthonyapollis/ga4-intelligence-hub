@@ -1,0 +1,31 @@
+event_date,event_name,page_title,device_category,country,traffic_source,traffic_medium,user_pseudo_id,ga_session_id,ga_session_number,engagement_time_msec,page_location,clean_event,all_data,percent_scrolled,currency,value,transaction_id,ltv_propensity_score
+2021-01-31,page_view,Home,mobile,United States,google,organic,1026454.4271,1612123456,1,,https://shop.googlemerchandisestore.com/,gtm.js,,,,,,
+2021-01-31,scroll,Home,mobile,United States,google,organic,1026454.4271,1612123456,1,7800,https://shop.googlemerchandisestore.com/,gtm.js,,90,,,,
+2021-01-31,session_start,Apparel | Google Merchandise Store,mobile,United States,google,organic,1029692.9551,1612123789,1,,,,,,,,,
+2021-01-31,first_visit,Apparel | Google Merchandise Store,mobile,United States,google,organic,1029692.9551,1612123789,1,,,,,,,,,
+2021-01-31,view_item,Google Unisex Eco Tee,mobile,United States,google,organic,1029692.9551,1612123789,1,12400,https://shop.googlemerchandisestore.com/Google+Redesign/Apparel/Eco+Tee,gtm.js,,,,USD,25.99,,0.51
+2021-01-31,view_promotion,Home,desktop,Canada,google,organic,1037360.4939,1612124001,2,3200,https://shop.googlemerchandisestore.com/,gtm.js,,,,,,
+2021-01-31,add_to_cart,Google Unisex Eco Tee,desktop,Canada,google,organic,1037360.4939,1612124001,2,8100,https://shop.googlemerchandisestore.com/Google+Redesign/Apparel/Eco+Tee,gtm.js,,,USD,25.99,,0.79
+2021-01-31,begin_checkout,Shopping Cart,desktop,Canada,google,organic,1037360.4939,1612124001,2,4400,https://shop.googlemerchandisestore.com/basket.html,gtm.js,,,USD,51.98,,0.79
+2021-01-31,add_shipping_info,Checkout,desktop,Canada,google,organic,1037360.4939,1612124001,2,6200,https://shop.googlemerchandisestore.com/payment.html,gtm.js,,,USD,51.98,,0.79
+2021-01-31,add_payment_info,Checkout,desktop,Canada,google,organic,1037360.4939,1612124001,2,9100,https://shop.googlemerchandisestore.com/payment.html,gtm.js,,,USD,51.98,,0.79
+2021-01-31,purchase,Order Confirmation,desktop,Canada,google,organic,1037360.4939,1612124001,2,2100,https://shop.googlemerchandisestore.com/order-confirm.html,gtm.js,,,USD,107.97,GMS-20210131-001,0.86
+2020-11-01,page_view,Drinkware | Lifestyle | Google Merchandise Store,desktop,India,google,organic,1005694.5834,1604192000,1,,https://shop.googlemerchandisestore.com/Google+Redesign/Lifestyle/Drinkware,gtm.js,,,,,,
+2020-11-01,first_visit,Drinkware | Lifestyle | Google Merchandise Store,desktop,India,google,organic,1005694.5834,1604192000,1,,,,,,,,,
+2020-11-01,view_item,Google Stainless Steel Bottle,desktop,India,google,organic,1005694.5834,1604192000,1,15600,https://shop.googlemerchandisestore.com/Google+Redesign/Lifestyle/Drinkware/Bottle,gtm.js,,,USD,22.00,,0.38
+2020-11-01,session_start,Home,mobile,United States,(direct),(none),1013442.5000,1604192100,3,,,,,,,,,
+2020-11-01,view_promotion,Home,mobile,United States,(direct),(none),1013442.5000,1604192100,3,4800,https://shop.googlemerchandisestore.com/,gtm.js,,,,,,
+2020-11-01,page_view,Shopping Cart,mobile,United States,(direct),(none),1013442.5000,1604192100,3,,https://shop.googlemerchandisestore.com/basket.html,gtm.js,,,,,,
+2020-11-01,session_start,YouTube | Shop by Brand | Google Merchandise Store,desktop,United Kingdom,google,organic,1014271.4747,1604192200,1,,,,,,,,,
+2020-11-01,page_view,YouTube | Shop by Brand | Google Merchandise Store,desktop,United Kingdom,google,organic,1014271.4747,1604192200,1,,https://shop.googlemerchandisestore.com/Google+Redesign/Shop+by+Brand/YouTube,gtm.js,,,,,,
+2020-11-01,view_item,YouTube Logo Tee,desktop,United Kingdom,google,organic,1014271.4747,1604192200,1,9200,https://shop.googlemerchandisestore.com/Google+Redesign/Shop+by+Brand/YouTube/Logo+Tee,gtm.js,,,USD,28.00,,0.44
+2020-11-01,scroll,Drinkware | Lifestyle | Google Merchandise Store,desktop,Canada,<Other>,referral,1019516.6557,1604192300,2,5400,https://shop.googlemerchandisestore.com/Google+Redesign/Lifestyle/Drinkware,gtm.js,,90,,,,
+2020-11-01,add_to_cart,Google Stainless Steel Bottle,desktop,Canada,<Other>,referral,1019516.6557,1604192300,2,7200,https://shop.googlemerchandisestore.com/Google+Redesign/Lifestyle/Drinkware/Bottle,gtm.js,,,USD,44.00,,0.67
+2020-11-01,begin_checkout,Shopping Cart,desktop,Canada,<Other>,referral,1019516.6557,1604192300,2,3800,https://shop.googlemerchandisestore.com/basket.html,gtm.js,,,USD,44.00,,0.67
+2020-11-01,add_payment_info,Checkout,desktop,Canada,<Other>,referral,1019516.6557,1604192300,2,8100,https://shop.googlemerchandisestore.com/payment.html,gtm.js,,,USD,44.00,,0.67
+2020-11-01,view_search_results,Store search results,mobile,Ireland,google,organic,1022381.7743,1604192400,1,2100,https://shop.googlemerchandisestore.com/asearch.html?q=%3Cobfuscated%3E,gtm.js,,,,,,
+2020-11-01,page_view,Hats | Apparel | Google Merchandise Store,mobile,Ireland,google,organic,1022381.7743,1604192400,1,,https://shop.googlemerchandisestore.com/Google+Redesign/Apparel/Hats,gtm.js,,,,,,
+2020-11-01,add_to_cart,Google Recycled Hat,mobile,Ireland,google,organic,1022381.7743,1604192400,1,6300,https://shop.googlemerchandisestore.com/Google+Redesign/Apparel/Hats/Recycled-Hat,gtm.js,,,USD,28.00,,0.55
+2020-11-01,begin_checkout,Shopping Cart,mobile,Ireland,google,organic,1022381.7743,1604192400,1,4100,https://shop.googlemerchandisestore.com/basket.html,gtm.js,,,USD,28.00,,0.55
+2020-11-01,add_shipping_info,Checkout,mobile,Ireland,google,organic,1022381.7743,1604192400,1,7400,https://shop.googlemerchandisestore.com/payment.html,gtm.js,,,USD,28.00,,0.55
+2020-11-01,purchase,Order Confirmation,mobile,Ireland,google,organic,1022381.7743,1604192400,1,2800,https://shop.googlemerchandisestore.com/order-confirm.html,gtm.js,,,USD,28.00,GMS-20201101-004,0.55
