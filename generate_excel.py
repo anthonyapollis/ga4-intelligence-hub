@@ -1542,22 +1542,22 @@ def build_dbt_models(wb):
 
 # ─── PRODUCT PERFORMANCE ─────────────────────────────────────────────────────
 def build_product_performance(wb):
-    """Ranked product table: revenue, units, margin — light blue/white theme."""
+    """Ranked product table: revenue, units, margin — rose/coral theme."""
     ws = wb.create_sheet("Product Performance")
     ws.sheet_view.showGridLines = False
 
-    # Palette — light theme
-    HDR_BG   = "1E3A5F"   # deep navy header
+    # Palette — Rose / Crimson
+    HDR_BG   = "881337"   # deep rose header
     HDR_FG   = "FFFFFF"
-    ROW_A    = "EFF6FF"   # light blue
+    ROW_A    = "FFF1F2"   # blush
     ROW_B    = "FFFFFF"
-    GREEN    = "166534"
-    RED      = "991B1B"
-    ORANGE   = "92400E"
-    TEAL     = "0E7490"
+    GREEN    = "15803D"
+    RED      = "9F1239"
+    ORANGE   = "C2410C"
+    TEAL     = "BE185D"   # hot pink accent
     MUTED    = "374151"
-    GOLD_BG  = "FEF3C7"
-    GOLD_FG  = "78350F"
+    GOLD_BG  = "FCE7F3"   # pink highlight
+    GOLD_FG  = "9D174D"
 
     # Title banner
     ws.merge_cells("A1:K1")
@@ -1694,13 +1694,13 @@ def build_product_performance(wb):
 
 # ─── PARETO ANALYSIS ─────────────────────────────────────────────────────────
 def build_pareto(wb):
-    """80/20 cumulative revenue — green/white theme with combo chart."""
+    """80/20 cumulative revenue — deep indigo/violet theme with combo chart."""
     ws = wb.create_sheet("Pareto Analysis")
     ws.sheet_view.showGridLines = False
 
-    H_BG = "14532D"; H_FG = "FFFFFF"
-    ROW_A = "F0FDF4"; ROW_B = "FFFFFF"
-    GRN   = "166534"; MUT   = "374151"; BLU   = "1D4ED8"
+    H_BG = "312E81"; H_FG = "FFFFFF"   # indigo-900
+    ROW_A = "EEF2FF"; ROW_B = "FFFFFF"  # indigo-50
+    GRN   = "3730A3"; MUT   = "374151"; BLU   = "4F46E5"  # indigo accents
 
     ws.merge_cells("A1:H1")
     c = ws["A1"]
@@ -1793,11 +1793,11 @@ def build_pareto(wb):
 
 # ─── COHORT RETENTION ────────────────────────────────────────────────────────
 def build_cohort_retention(wb):
-    """Monthly cohort heatmap — teal/white theme."""
+    """Monthly cohort heatmap — amber/warm honey theme."""
     ws = wb.create_sheet("Cohort Retention")
     ws.sheet_view.showGridLines = False
 
-    H_BG = "0F4C75"; H_FG = "FFFFFF"
+    H_BG = "78350F"; H_FG = "FFFFFF"   # amber-900
 
     ws.merge_cells("A1:N1")
     c = ws["A1"]
@@ -1812,7 +1812,7 @@ def build_cohort_retention(wb):
     c2.value = ("Insight: Month-0 retention = 100%  ·  Month-1 avg = 42%  ·  "
                 "Month-3 avg = 28%  ·  Month-6 avg = 19%  ·  Month-12 avg = 11%")
     c2.font = Font(name="Calibri", size=10, italic=True, color=H_BG)
-    c2.fill = PatternFill("solid", fgColor="E0F2FE")
+    c2.fill = PatternFill("solid", fgColor="FEF3C7")
     c2.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[2].height = 16
     ws.row_dimensions[3].height = 6
@@ -1856,21 +1856,21 @@ def build_cohort_retention(wb):
 
     def retention_color(val):
         if val is None: return "D1D5DB"
-        if val >= 0.40: return "0369A1"
-        if val >= 0.30: return "0EA5E9"
-        if val >= 0.20: return "7DD3FC"
-        if val >= 0.10: return "BAE6FD"
-        return "E0F2FE"
+        if val >= 0.40: return "B45309"   # amber-700 dark
+        if val >= 0.30: return "D97706"   # amber-600
+        if val >= 0.20: return "FBBF24"   # amber-400
+        if val >= 0.10: return "FDE68A"   # amber-200
+        return "FEF9C3"                    # yellow-100
 
     for ci, (cohort, nu, row_data) in enumerate(zip(cohort_months, new_users, retention_grid), 5):
         ws.row_dimensions[ci].height = 18
         ws.cell(ci, 1).value = cohort
         ws.cell(ci, 1).font = Font(name="Calibri", size=9, bold=True, color="0F4C75")
-        ws.cell(ci, 1).fill = PatternFill("solid", fgColor="DBEAFE")
+        ws.cell(ci, 1).fill = PatternFill("solid", fgColor="FDE68A")
         ws.cell(ci, 1).alignment = Alignment(horizontal="center", vertical="center")
         ws.cell(ci, 2).value = nu
         ws.cell(ci, 2).font = Font(name="Calibri", size=9, color="374151")
-        ws.cell(ci, 2).fill = PatternFill("solid", fgColor="F0F9FF")
+        ws.cell(ci, 2).fill = PatternFill("solid", fgColor="FFFBEB")
         ws.cell(ci, 2).number_format = "#,##0"
         ws.cell(ci, 2).alignment = Alignment(horizontal="right", vertical="center")
         for mi, val in enumerate(row_data):
@@ -1879,7 +1879,7 @@ def build_cohort_retention(wb):
             if val is not None:
                 cell.value = val
                 cell.number_format = "0%"
-                text_col = "FFFFFF" if val >= 0.30 else "0F4C75"
+                text_col = "FFFFFF" if val >= 0.30 else "78350F"
                 cell.font = Font(name="Calibri", size=9, bold=(val == 1.00), color=text_col)
                 cell.alignment = Alignment(horizontal="center", vertical="center")
 
@@ -1887,7 +1887,7 @@ def build_cohort_retention(wb):
     ws.row_dimensions[18].height = 6
     ws.merge_cells("A19:N19")
     lg = ws["A19"]
-    lg.value = "LEGEND:  ■ ≥40% (dark blue)   ■ ≥30% (medium blue)   ■ ≥20% (light blue)   ■ ≥10% (pale blue)   ■ <10% (very pale)   ■ No data (grey)"
+    lg.value = "LEGEND:  ■ ≥40% (dark amber)   ■ ≥30% (amber)   ■ ≥20% (gold)   ■ ≥10% (light gold)   ■ <10% (pale yellow)   ■ No data (grey)"
     lg.font = Font(name="Calibri", size=9, italic=True, color="374151")
     lg.fill = PatternFill("solid", fgColor="F8FAFC")
     lg.alignment = Alignment(horizontal="left", vertical="center")
@@ -1900,14 +1900,14 @@ def build_cohort_retention(wb):
 
 # ─── CHANNEL ROI ─────────────────────────────────────────────────────────────
 def build_channel_roi(wb):
-    """Channel revenue, cost, ROAS, CPA — orange/white theme."""
+    """Channel revenue, cost, ROAS, CPA — emerald/forest green theme."""
     ws = wb.create_sheet("Channel ROI")
     ws.sheet_view.showGridLines = False
 
-    H_BG = "7C2D12"; H_FG = "FFFFFF"
-    ROW_A = "FFF7ED"; ROW_B = "FFFFFF"
-    GRN   = "166534"; RED = "991B1B"; MUT = "374151"; BLU = "1D4ED8"
-    ORG   = "9A3412"
+    H_BG = "064E3B"; H_FG = "FFFFFF"   # emerald-900
+    ROW_A = "ECFDF5"; ROW_B = "FFFFFF"  # emerald-50
+    GRN   = "065F46"; RED = "991B1B"; MUT = "374151"; BLU = "1D4ED8"
+    ORG   = "059669"   # emerald-600 accent
 
     ws.merge_cells("A1:J1")
     c = ws["A1"]
@@ -1921,7 +1921,7 @@ def build_channel_roi(wb):
     c2 = ws["A2"]
     c2.value = "Total Revenue: $891,480  ·  Paid Spend: $214,800  ·  Blended ROAS: 4.15x  ·  Blended CPA: $25.55"
     c2.font = Font(name="Calibri", size=10, italic=True, color=H_BG)
-    c2.fill = PatternFill("solid", fgColor="FFEDD5")
+    c2.fill = PatternFill("solid", fgColor="D1FAE5")
     c2.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[2].height = 16
     ws.row_dimensions[3].height = 6
@@ -2013,19 +2013,19 @@ def build_channel_roi(wb):
 
 # ─── RFM SEGMENTS ────────────────────────────────────────────────────────────
 def build_rfm_segments(wb):
-    """RFM scoring + segment classification — purple/white theme."""
+    """RFM scoring + segment classification — cyan/sky blue theme."""
     ws = wb.create_sheet("RFM Segments")
     ws.sheet_view.showGridLines = False
 
-    H_BG = "4C1D95"; H_FG = "FFFFFF"
-    ROW_A = "F5F3FF"; ROW_B = "FFFFFF"
+    H_BG = "0E4F6A"; H_FG = "FFFFFF"   # cyan-900-ish
+    ROW_A = "ECFEFF"; ROW_B = "FFFFFF"  # cyan-50
     MUT   = "374151"
     SEG_COLORS = {
-        "Champion":   ("312E81","EDE9FE"),
-        "Loyal":      ("065F46","D1FAE5"),
-        "Active":     ("1D4ED8","DBEAFE"),
-        "At Risk":    ("92400E","FEF3C7"),
-        "Lost":       ("991B1B","FEE2E2"),
+        "Champion":   ("0E7490","CFFAFE"),  # cyan
+        "Loyal":      ("065F46","D1FAE5"),  # emerald
+        "Active":     ("1D4ED8","DBEAFE"),  # blue
+        "At Risk":    ("B45309","FEF3C7"),  # amber
+        "Lost":       ("991B1B","FEE2E2"),  # red
     }
 
     ws.merge_cells("A1:K1")
@@ -2042,7 +2042,7 @@ def build_rfm_segments(wb):
                 "Frequency 1-5 (5=most orders)  ·  Monetary 1-5 (5=highest spend)  ·  "
                 "RFM Score = R+F+M (max 15)")
     c2.font = Font(name="Calibri", size=10, italic=True, color=H_BG)
-    c2.fill = PatternFill("solid", fgColor="EDE9FE")
+    c2.fill = PatternFill("solid", fgColor="CFFAFE")
     c2.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[2].height = 16
     ws.row_dimensions[3].height = 6
@@ -2109,11 +2109,11 @@ def build_rfm_segments(wb):
             cell.alignment = Alignment(horizontal=h, vertical="center")
             if fmt: cell.number_format = fmt
 
-        pc(1,  cid,         fg="4C1D95", bold=True)
+        pc(1,  cid,         fg="0E4F6A", bold=True)
         pc(2,  tier,        h="center", fg=seg_fg, bold=True, cell_bg=seg_bg)
         pc(3,  days,        h="right",  fg=MUT, fmt="#,##0")
         pc(4,  r,           h="center", fg="FFFFFF" if r>=4 else MUT,
-           bold=True, cell_bg="4C1D95" if r==5 else "7C3AED" if r==4 else "A78BFA" if r==3 else "DDD6FE")
+           bold=True, cell_bg="155E75" if r==5 else "0E7490" if r==4 else "67E8F9" if r==3 else "CFFAFE")
         pc(5,  orders,      h="right",  fg=MUT, fmt="#,##0")
         pc(6,  f,           h="center", fg="FFFFFF" if f>=4 else MUT,
            bold=True, cell_bg="065F46" if f==5 else "047857" if f==4 else "6EE7B7" if f==3 else "D1FAE5")
@@ -2121,7 +2121,7 @@ def build_rfm_segments(wb):
         pc(8,  m,           h="center", fg="FFFFFF" if m>=4 else MUT,
            bold=True, cell_bg="1D4ED8" if m==5 else "2563EB" if m==4 else "93C5FD" if m==3 else "DBEAFE")
         pc(9,  total_score, h="center", fg="FFFFFF", bold=True,
-           cell_bg="4C1D95" if total_score>=13 else "7C3AED" if total_score>=10 else "A78BFA" if total_score>=7 else "C4B5FD")
+           cell_bg="0E4F6A" if total_score>=13 else "0E7490" if total_score>=10 else "22D3EE" if total_score>=7 else "CFFAFE")
         pc(10, segment,     h="center", fg=seg_fg, bold=True, cell_bg=seg_bg)
         pc(11, action,      fg="374151")
 
