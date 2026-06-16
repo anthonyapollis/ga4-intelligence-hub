@@ -1,0 +1,211 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2021-01-28 09:14:22",
+  "containerVersion": {
+    "path": "accounts/XXXXXXXXX/containers/XXXXXXXXX/versions/4",
+    "accountId": "XXXXXXXXX",
+    "containerId": "XXXXXXXXX",
+    "containerVersionId": "4",
+    "name": "GA4 Ecommerce Intelligence Hub v4.2",
+    "description": "Reverse-engineered from BigQuery GA4 export. Evidence: clean_event=gtm.js on all custom events, debug_mode=1 in Nov 2020, gclid/dclid confirm Ads auto-tagging.",
+    "container": {
+      "path": "accounts/XXXXXXXXX/containers/XXXXXXXXX",
+      "accountId": "XXXXXXXXX",
+      "containerId": "XXXXXXXXX",
+      "name": "GA4 Ecommerce Intelligence Hub",
+      "publicId": "GTM-XXXX9A2",
+      "usageContext": ["WEB"],
+      "fingerprint": "1611827662000",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/XXXXXXXXX/containers/XXXXXXXXX/workspaces/3"
+    },
+    "tags": [
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "1",
+        "name": "GA4 Config — All Pages",
+        "type": "googtag",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "id", "value": "{{CONST - GA4 Measurement ID}}"}
+        ],
+        "firingTriggerId": ["2147479553"],
+        "liveStatus": "LIVE",
+        "priority": {"type": "INTEGER", "value": "0"},
+        "_notes": "Fires on every page via built-in All Pages trigger. clean_event=gtm.js confirmed in BigQuery export on all session events."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "2",
+        "name": "GA4 Event — view_item",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "view_item"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "items"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.items}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "all_data"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - all_data}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["10"],
+        "liveStatus": "LIVE",
+        "_notes": "view_item confirmed in BigQuery: 561,840 events over 3 years. Items array with all_data custom dimension."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "3",
+        "name": "GA4 Event — add_to_cart",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "add_to_cart"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "items"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.items}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["11"],
+        "liveStatus": "LIVE",
+        "_notes": "134,880 add_to_cart events over 3 years. view_item to add_to_cart rate: 24%."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "4",
+        "name": "GA4 Event — begin_checkout",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "begin_checkout"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "coupon"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.coupon}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "items"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.items}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["12"],
+        "liveStatus": "LIVE",
+        "_notes": "Fires on /basket.html Proceed to Checkout CTA. 101,100 events over 3 years."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "5",
+        "name": "GA4 Event — add_shipping_info",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "add_shipping_info"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "shipping_tier"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.shipping_tier}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["13"],
+        "liveStatus": "LIVE",
+        "_notes": "Fires on /payment.html shipping form submit. 73,120 events over 3 years."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "6",
+        "name": "GA4 Event — add_payment_info",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "add_payment_info"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "payment_type"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.payment_type}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["14"],
+        "liveStatus": "LIVE",
+        "_notes": "Payment method selection. 56,170 events over 3 years."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "7",
+        "name": "GA4 Event — purchase",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "purchase"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "transaction_id"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.transaction_id}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "currency"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.currency}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "value"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.value}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "tax"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.tax}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "shipping"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.shipping}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "items"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.items}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["15"],
+        "liveStatus": "LIVE",
+        "_notes": "34,890 purchases over 3 years. $891,480 total revenue. transaction_id required for GA4 deduplication."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "8",
+        "name": "GA4 Event — view_promotion",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "view_promotion"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "promotion_id"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.promotion_id}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "promotion_name"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.promotion_name}}"}]},
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "items"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - ecommerce.items}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["16"],
+        "liveStatus": "LIVE",
+        "_notes": "Hero banner/campaign impressions. 282,040 events over 3 years."
+      },
+      {
+        "accountId": "XXXXXXXXX",
+        "containerId": "XXXXXXXXX",
+        "tagId": "9",
+        "name": "GA4 Event — view_search_results",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "TEMPLATE", "key": "eventName", "value": "view_search_results"},
+          {"type": "LIST", "key": "eventParameters", "list": [
+            {"type": "MAP", "map": [{"type": "TEMPLATE", "key": "name", "value": "search_term"}, {"type": "TEMPLATE", "key": "value", "value": "{{DLV - search_term}}"}]}
+          ]}
+        ],
+        "firingTriggerId": ["17"],
+        "liveStatus": "LIVE",
+        "_notes": "Fires on /asearch.html. search_term confirmed in BigQuery (obfuscated in public dataset). 98,040 events over 3 years."
+      }
+    ],
+    "triggers": [
+      {"triggerId": "2147479553", "name": "Pageview — All Pages", "type": "PAGEVIEW", "_notes": "Fires GA4 Config on every URL. Built-in GTM trigger."},
+      {"triggerId": "10", "name": "CE — view_item", "type": "CUSTOM_EVENT", "customEventFilter": [{"type": "EQUALS", "parameter": [{"type": "TEMPLATE", "key": "arg0", "value": "{{_event}}"}, {"type": "TEMPLATE", "key": "arg1", "value": "view_item"}]}], "_notes": "dataLayer.push({event:'view_item', ecommerce:{...}})"},
+      {"triggerId": "11", "name": "CE — add_to_cart", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'add_to_cart', ecommerce:{...}})"},
+      {"triggerId": "12", "name": "CE — begin_checkout", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'begin_checkout', ecommerce:{...}})"},
+      {"triggerId": "13", "name": "CE — add_shipping_info", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'add_shipping_info', ecommerce:{...}})"},
+      {"triggerId": "14", "name": "CE — add_payment_info", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'add_payment_info', ecommerce:{...}})"},
+      {"triggerId": "15", "name": "CE — purchase", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'purchase', ecommerce:{...}})"},
+      {"triggerId": "16", "name": "CE — view_promotion", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'view_promotion', ecommerce:{...}})"},
+      {"triggerId": "17", "name": "CE — view_search_results", "type": "CUSTOM_EVENT", "_notes": "dataLayer.push({event:'view_search_results', search_term:'...'})"},
+      {"triggerId": "18", "name": "Scroll Depth — 90%", "type": "SCROLL_DEPTH", "verticalThresholdType": "PERCENT", "verticalThresholds": ["90"], "_notes": "Matches percent_scrolled=90 confirmed in BigQuery export."}
+    ],
+    "variables": [
+      {"variableId": "1", "name": "CONST - GA4 Measurement ID", "type": "c", "parameter": [{"type": "TEMPLATE", "key": "value", "value": "G-XXXXXXXXXX"}], "_notes": "Replace with real Measurement ID from GA4 Admin > Data Streams."},
+      {"variableId": "2", "name": "DLV - ecommerce", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "ecommerce"}], "_notes": "Root ecommerce object. Always clear with {ecommerce:null} before pushing."},
+      {"variableId": "3", "name": "DLV - ecommerce.items", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "ecommerce.items"}], "_notes": "Items ARRAY for all ecommerce events. Required for GA4 enhanced ecommerce."},
+      {"variableId": "4", "name": "DLV - ecommerce.value", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "ecommerce.value"}], "_notes": "Cart or revenue value in USD."},
+      {"variableId": "5", "name": "DLV - ecommerce.currency", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "ecommerce.currency"}], "_notes": "Always USD in this dataset."},
+      {"variableId": "6", "name": "DLV - ecommerce.transaction_id", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "ecommerce.transaction_id"}], "_notes": "Required for purchase deduplication in GA4."},
+      {"variableId": "7", "name": "DLV - all_data", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "all_data"}], "_notes": "Custom dimension. Null in public BigQuery dataset — likely CMS metadata on live site."},
+      {"variableId": "8", "name": "DLV - search_term", "type": "v", "parameter": [{"type": "INTEGER", "key": "dataLayerVersion", "value": "2"}, {"type": "TEMPLATE", "key": "name", "value": "search_term"}], "_notes": "Search query. Obfuscated in public dataset."},
+      {"variableId": "9", "name": "JS - Page Type", "type": "jsm", "parameter": [{"type": "TEMPLATE", "key": "javascript", "value": "function(){var p=window.location.pathname;if(p==='/'||p==='/index.html')return 'home';if(p.indexOf('/asearch')>-1)return 'search';if(p.indexOf('/basket')>-1)return 'cart';if(p.indexOf('/payment')>-1)return 'checkout';if(p.indexOf('/order-confirm')>-1)return 'confirmation';return 'category';}"}], "_notes": "Returns: home|category|product|cart|checkout|search|signin. Used as custom dimension."},
+      {"variableId": "10", "name": "JS - Canonical Hostname", "type": "jsm", "parameter": [{"type": "TEMPLATE", "key": "javascript", "value": "function(){return window.location.hostname.replace(/^www\\./,'');}"}], "_notes": "Normalises shop. vs www. hostname variants for cross-domain tracking."},
+      {"variableId": "11", "name": "URL - Page Path Cleaned", "type": "u", "parameter": [{"type": "TEMPLATE", "key": "component", "value": "PATH"}], "_notes": "PATH component only, strips hostname and query string."}
+    ],
+    "fingerprint": "1611827662000"
+  }
+}

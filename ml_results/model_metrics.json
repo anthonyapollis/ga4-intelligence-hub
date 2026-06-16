@@ -1,0 +1,155 @@
+{
+  "purchase_propensity": {
+    "algorithm": "Logistic Regression",
+    "target": "Will user purchase this session?",
+    "training_rows": 80000,
+    "metrics": {
+      "auc": 0.7824,
+      "average_precision": 0.2537,
+      "cv_auc_mean": 0.7864,
+      "cv_auc_std": 0.004,
+      "precision": 0.1952,
+      "recall": 0.8316,
+      "f1": 0.3161
+    },
+    "confusion_matrix": [
+      [
+        9608,
+        4949
+      ],
+      [
+        243,
+        1200
+      ]
+    ],
+    "feature_importance": {
+      "Session count": 0.11158850674499897,
+      "Items viewed": 0.06780204665469679,
+      "Add-to-cart count": 0.0018035553005286082,
+      "Began checkout": 0.17384047579717268,
+      "Engagement time (ms)": 0.11006647244299815,
+      "Scroll depth %": 0.06619244865238677,
+      "Days since first visit": 0.012163698959995877,
+      "Mobile device": 0.1759034358397306,
+      "Returning user": 0.940026166554483,
+      "Organic traffic": 0.010868234034209147,
+      "Paid traffic": 0.03402139085555532,
+      "Country tier": 0.04794590610763691
+    },
+    "propensity_segments": [
+      {
+        "bucket": "0\u201320%",
+        "users": 5633,
+        "purchases": 129,
+        "conv_rate": 0.022900763358778626
+      },
+      {
+        "bucket": "20\u201340%",
+        "users": 4209,
+        "purchases": 111,
+        "conv_rate": 0.026372059871703494
+      },
+      {
+        "bucket": "40\u201360%",
+        "users": 549,
+        "purchases": 70,
+        "conv_rate": 0.12750455373406194
+      },
+      {
+        "bucket": "60\u201380%",
+        "users": 4943,
+        "purchases": 920,
+        "conv_rate": 0.18612178838761886
+      },
+      {
+        "bucket": "80\u2013100%",
+        "users": 666,
+        "purchases": 213,
+        "conv_rate": 0.31981981981981983
+      }
+    ]
+  },
+  "ltv_prediction": {
+    "algorithm": "Random Forest Regressor",
+    "target": "90-day LTV (USD) for purchasers",
+    "training_rows": "purchasers only",
+    "metrics": {
+      "r2": 0.9508,
+      "mae": 8.59,
+      "rmse": 11.61
+    },
+    "feature_importance": {
+      "Session count": 0.42852601631685666,
+      "Items viewed": 0.0006427423859944768,
+      "Add-to-cart count": 0.0004871657446124463,
+      "Began checkout": 0.05589768921083697,
+      "Engagement time (ms)": 0.0029241616566300943,
+      "Scroll depth %": 0.002790433477893632,
+      "Days since first visit": 0.24230002071398224,
+      "Mobile device": 0.00028791009671186475,
+      "Returning user": 0.2296505367180156,
+      "Organic traffic": 0.0001627386635964272,
+      "Paid traffic": 0.00014966743516838408,
+      "Country tier": 0.03618091757970127
+    },
+    "tier_breakdown": [
+      {
+        "predicted_tier": "Gold",
+        "count": 736,
+        "avg_pred_ltv": 134.96252077290316,
+        "avg_actual_ltv": 135.16645010894
+      },
+      {
+        "predicted_tier": "Platinum",
+        "count": 5454,
+        "avg_pred_ltv": 192.22603365134674,
+        "avg_actual_ltv": 192.39973227886728
+      },
+      {
+        "predicted_tier": "Silver",
+        "count": 1025,
+        "avg_pred_ltv": 63.39088269934253,
+        "avg_actual_ltv": 62.85897570868172
+      }
+    ]
+  },
+  "cart_abandonment": {
+    "algorithm": "Gradient Boosting Classifier",
+    "target": "Will user abandon cart?",
+    "training_rows": "cart sessions only",
+    "metrics": {
+      "auc": 0.7361,
+      "average_precision": 0.9368,
+      "cv_auc_mean": 0.7423,
+      "cv_auc_std": 0.005,
+      "precision": 0.8442,
+      "recall": 0.9894,
+      "f1": 0.911
+    },
+    "confusion_matrix": [
+      [
+        15,
+        362
+      ],
+      [
+        21,
+        1961
+      ]
+    ],
+    "feature_importance": {
+      "Session count": 0.12125128869486645,
+      "Items viewed": 0.03521882821835378,
+      "Add-to-cart count": 0.02483450825591713,
+      "Began checkout": 0.024642419718368468,
+      "Engagement time (ms)": 0.22412293616059112,
+      "Scroll depth %": 0.19065161357984253,
+      "Days since first visit": 0.23936431317310963,
+      "Mobile device": 0.018536901101876026,
+      "Returning user": 0.08925271296564424,
+      "Organic traffic": 0.006031785823447338,
+      "Paid traffic": 0.007612529863635667,
+      "Country tier": 0.018480162444347543
+    },
+    "high_risk_sessions": 1662
+  }
+}

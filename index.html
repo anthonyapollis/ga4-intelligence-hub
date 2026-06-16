@@ -21,13 +21,12 @@
     <a href="#journey">Funnel</a>
     <a href="#gtm">GTM</a>
     <a href="#bigquery">BigQuery</a>
-    <a href="#ml">ML</a>
-    <a href="#traffic">Traffic</a>
+    <a href="#ml">ML Models</a>
+    <a href="#audience">Audience</a>
     <a href="#transactions">Transactions</a>
     <a href="#events">Events</a>
     <a href="#ga4setup">GA4 Setup</a>
     <a href="#bestpractices">Best Practices</a>
-    <a href="#netlify">Netlify</a>
   </nav>
 </header>
 
@@ -39,11 +38,16 @@
     <div class="hero-copy">
       <p class="eyebrow">Analytics Engineering · Portfolio Project</p>
       <h2 id="heroTitle">GA4 Ecommerce<br>Intelligence Hub</h2>
-      <p id="sourceLine">3-year full-stack analytics: GA4 tracking → GTM tag management → BigQuery BATCH pipeline → ML predictions → Netlify CDN. 13.8M events · 1,096 days · 36-month revenue trend · 3 ML models.</p>
+      <p id="sourceLine">3-year full-stack analytics: GA4 tracking → GTM tag management → BigQuery BATCH pipeline → ML predictions. 13.8M events · 1,096 days · 36-month revenue trend · 3 ML models.</p>
+      <div class="hero-stats" id="heroStats"></div>
       <div class="download-strip">
-        <a href="sample_events.csv" download class="dl-btn">⬇ Sample Events CSV</a>
-        <a href="../../../GA4_Analytics_Showcase/gtm/ga4_container_export.json" download class="dl-btn">⬇ GTM Container JSON</a>
-        <a href="../../../GA4_Analytics_Showcase/booklet/ga4_measurement_booklet.html" target="_blank" class="dl-btn primary">📖 Measurement Booklet</a>
+        <a href="sample_events.csv" download class="dl-btn">⬇ Events CSV</a>
+        <a href="gtm_container.json" download class="dl-btn">⬇ GTM JSON</a>
+        <a href="bigquery_queries.sql" download class="dl-btn">⬇ BQ Queries SQL</a>
+        <a href="GA4_Intelligence_Hub_Professional_v2.xlsx" download class="dl-btn excel-btn">⬇ Excel Report (Pro)</a>
+        <button onclick="downloadExcel()" class="dl-btn" style="background:#1e3a5f;color:#fff;border-color:#1e3a5f">⬇ Export Live Data</button>
+        <a href="ebook.html" target="_blank" class="dl-btn" style="background:var(--violet);color:#fff;border-color:var(--violet)">📖 Open Ebook</a>
+        <a href="#bestpractices" class="dl-btn primary">Best Practices</a>
       </div>
     </div>
     <div class="hero-visual">
@@ -190,70 +194,49 @@
     <div class="section-title">
       <div>
         <p class="eyebrow" style="color:var(--violet)">Machine Learning · Predictive Intelligence</p>
-        <h2 style="color:#3B0764">Three models, one BigQuery training set</h2>
+        <h2 style="color:#3B0764">Three scikit-learn models trained on 13.8M GA4 events</h2>
       </div>
       <span style="font-size:12px;color:var(--muted)" id="mlDisclaimer"></span>
     </div>
 
+    <!-- Model metric cards -->
     <div class="ml-models-grid" id="mlModelsGrid"></div>
 
-    <!-- Cart abandonment risk factors -->
-    <div style="margin-top:24px">
-      <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">Cart abandonment risk factors — feature importance</p>
-      <div class="bars" id="abandonmentBars"></div>
+    <!-- Chart.js visualisations -->
+    <div class="ml-charts-grid">
+      <div class="ml-chart-card">
+        <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">ROC Curves — Purchase Propensity &amp; Cart Abandonment</p>
+        <canvas id="rocChart"></canvas>
+      </div>
+      <div class="ml-chart-card">
+        <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">Propensity Score by User Segment</p>
+        <canvas id="propensityChart"></canvas>
+      </div>
+      <div class="ml-chart-card">
+        <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">Customer LTV Tier Distribution</p>
+        <canvas id="ltvChart"></canvas>
+      </div>
+      <div class="ml-chart-card">
+        <p class="eyebrow" style="color:var(--violet);margin-bottom:10px">Cart Abandonment — Feature Importance</p>
+        <canvas id="featImportanceChart"></canvas>
+      </div>
     </div>
   </section>
 
-  <!-- TRAFFIC BREAKDOWNS -->
-  <section id="traffic">
-    <div class="grid-three">
-      <article class="panel">
-        <p class="eyebrow">Acquisition</p>
-        <h2>Traffic sources</h2>
-        <div class="rank-list" id="sourceList"></div>
-      </article>
-      <article class="panel">
-        <p class="eyebrow">Geography</p>
-        <h2>Top countries</h2>
-        <div class="rank-list" id="countryList"></div>
-      </article>
-      <article class="panel">
-        <p class="eyebrow">Content</p>
-        <h2>Top pages</h2>
-        <div class="rank-list" id="pageList"></div>
-      </article>
-    </div>
-  </section>
-
-  <section class="split">
-    <article class="panel accent-blue">
-      <div class="section-title">
-        <div><p class="eyebrow">Technology</p><h2>Browser mix</h2></div>
-      </div>
-      <div class="bars compact" id="browserBars"></div>
-    </article>
-    <article class="panel accent-gold">
-      <div class="section-title">
-        <div><p class="eyebrow">Channels</p><h2>Medium mix</h2></div>
-      </div>
-      <div class="bars compact" id="mediumBars"></div>
-    </article>
-  </section>
-
-  <!-- DEVICE CONVERSION -->
-  <section class="panel">
+  <!-- AUDIENCE INTELLIGENCE -->
+  <section class="panel" id="audience">
     <div class="section-title">
-      <div><p class="eyebrow">Device Intelligence</p><h2>Conversion rate by device</h2></div>
-      <span>Desktop converts at 3× mobile rate</span>
+      <div>
+        <p class="eyebrow">Audience Intelligence · 743K Users · 1.89M Sessions</p>
+        <h2>Traffic sources, devices &amp; geography</h2>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Device</th><th>Sessions</th><th>Purchases</th><th>Conversion Rate</th><th>Revenue</th><th>Revenue Share</th></tr>
-        </thead>
-        <tbody id="deviceTable"></tbody>
-      </table>
+    <div class="gtm-tabs" id="audienceTabs">
+      <button class="gtm-tab active" data-aud="sources">Traffic Sources</button>
+      <button class="gtm-tab" data-aud="devices">Devices &amp; Browsers</button>
+      <button class="gtm-tab" data-aud="geo">Geography &amp; Pages</button>
     </div>
+    <div id="audienceContent"></div>
   </section>
 
   <!-- TRACKING PLAN -->
@@ -304,14 +287,6 @@
         <tbody id="transactionTable"></tbody>
       </table>
     </div>
-  </section>
-
-  <!-- INSIGHTS -->
-  <section class="panel">
-    <div class="section-title">
-      <div><p class="eyebrow">Analytics Intelligence</p><h2>Key findings &amp; recommendations</h2></div>
-    </div>
-    <div class="insights" id="insights"></div>
   </section>
 
   <!-- RAW EVENTS TABLE -->
@@ -417,59 +392,6 @@
     <div id="bpContent"></div>
   </section>
 
-  <!-- NETLIFY CONFIG -->
-  <section class="netlify-panel" id="netlify">
-    <div class="section-title">
-      <div>
-        <p class="eyebrow" style="color:var(--gold)">Netlify Deployment · Why &amp; What</p>
-        <h2 style="color:#78350F">Static CDN with security headers, redirects, and 1-year asset cache</h2>
-      </div>
-      <span style="font-size:12px;color:var(--muted)">Publish dir: <code style="font-family:monospace">.</code> · No build command · Auto-deploy from Git</span>
-    </div>
-
-    <div class="netlify-feature-grid" id="netlifyFeatures"></div>
-
-    <p class="eyebrow" style="margin:20px 0 10px;color:var(--gold)">netlify.toml — production configuration</p>
-    <div class="code-block">
-<span class="cmt"># Netlify deploys this entire folder as-is — no build step needed.</span>
-<span class="cmt"># The GA4 dashboard, booklet, and GTM JSON are all static assets.</span>
-
-[build]
-  publish = <span class="str">"."</span>
-
-<span class="cmt"># Security headers on every response</span>
-[[headers]]
-  for = <span class="str">"/*"</span>
-  [headers.values]
-    X-Frame-Options           = <span class="str">"DENY"</span>
-    X-Content-Type-Options    = <span class="str">"nosniff"</span>
-    Referrer-Policy           = <span class="str">"strict-origin-when-cross-origin"</span>
-    Permissions-Policy        = <span class="str">"camera=(), microphone=(), geolocation=()"</span>
-    Content-Security-Policy   = <span class="str">"default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"</span>
-
-<span class="cmt"># 1-year immutable cache for fingerprinted JS/CSS</span>
-[[headers]]
-  for = <span class="str">"/*.js"</span>
-  [headers.values]
-    Cache-Control = <span class="str">"public, max-age=31536000, immutable"</span>
-
-[[headers]]
-  for = <span class="str">"/*.css"</span>
-  [headers.values]
-    Cache-Control = <span class="str">"public, max-age=31536000, immutable"</span>
-
-<span class="cmt"># Root redirect → main dashboard</span>
-[[redirects]]
-  from   = <span class="str">"/"</span>
-  to     = <span class="str">"/index.html"</span>
-  status = <span class="num">200</span>
-    </div>
-
-    <div class="download-strip" style="margin-top:16px">
-      <a href="netlify.toml" download class="dl-btn">⬇ netlify.toml</a>
-      <a href="#" class="dl-btn primary" onclick="alert('Connect your GitHub repo at netlify.app → New site from Git')">🚀 Deploy to Netlify</a>
-    </div>
-  </section>
 
 </main>
 
@@ -480,6 +402,8 @@
   <span style="margin-left:auto;font-size:12px">Stack: GA4 · GTM · BigQuery BATCH · Python scikit-learn · Netlify</span>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

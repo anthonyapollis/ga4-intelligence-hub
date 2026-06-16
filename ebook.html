@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GA4 Ecommerce Analytics — Implementation Guide</title>
+<style>
+/* ── VARIABLES ── */
+:root {
+  --blue: #2563EB;
+  --blue-dk: #1D4ED8;
+  --blue-lt: #EFF6FF;
+  --violet: #7C3AED;
+  --violet-lt: #F5F3FF;
+  --green: #059669;
+  --teal: #0D9488;
+  --gold: #D97706;
+  --red: #DC2626;
+  --ink: #0F172A;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --line: #E2E8F0;
+  --bg: #F8FAFC;
+  --white: #ffffff;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: #e8ecf0;
+  line-height: 1.6;
+}
+
+/* ── PAGE LAYOUT ── */
+.page {
+  background: var(--white);
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  padding: 18mm 18mm 14mm;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  position: relative;
+  page-break-after: always;
+}
+
+/* ── PRINT ── */
+@media print {
+  body { background: white; }
+  .page { margin: 0; box-shadow: none; width: 100%; padding: 14mm 16mm 12mm; }
+  .no-print { display: none !important; }
+}
+
+/* ── COVER ── */
+.cover {
+  background: linear-gradient(145deg, #0F172A 0%, #1E3A8A 60%, #1D4ED8 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22mm 20mm;
+  min-height: 297mm;
+}
+.cover-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px; padding: 5px 14px; font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: #93C5FD; width: fit-content;
+}
+.cover-dot { width: 7px; height: 7px; background: #34D399; border-radius: 50%; }
+.cover h1 {
+  font-size: 36px; font-weight: 900; line-height: 1.1; margin: 28px 0 14px;
+  letter-spacing: -1px;
+}
+.cover h1 span { color: #93C5FD; }
+.cover-sub { font-size: 15px; color: #CBD5E1; font-weight: 400; max-width: 400px; line-height: 1.5; }
+.cover-stack {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px;
+}
+.cover-tag {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px; padding: 5px 12px; font-size: 11px; font-weight: 700;
+  color: #E0E7FF; letter-spacing: .03em;
+}
+.cover-stats {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 36px;
+}
+.cover-stat { border-top: 2px solid rgba(255,255,255,0.2); padding-top: 12px; }
+.cover-stat strong { display: block; font-size: 26px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+.cover-stat span { font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.cover-footer { font-size: 11px; color: #64748B; }
+.cover-footer strong { color: #CBD5E1; }
+
+/* ── TOC ── */
+.toc-item {
+  display: flex; align-items: baseline; gap: 0; margin-bottom: 10px;
+}
+.toc-num { font-size: 11px; font-weight: 800; color: var(--blue); width: 28px; flex-shrink: 0; }
+.toc-title { font-size: 13px; font-weight: 600; color: var(--ink); flex: 1; }
+.toc-dots { flex: 1; border-bottom: 1.5px dotted var(--line); margin: 0 8px 3px; }
+.toc-pg { font-size: 11px; color: var(--muted); font-weight: 600; }
+.toc-section { font-size: 10px; color: var(--muted); margin: 4px 0 10px 28px; }
+
+/* ── HEADINGS ── */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 20px;
+}
+.page-header-left { display: flex; align-items: center; gap: 10px; }
+.chapter-num {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--blue);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; flex-shrink: 0;
+}
+.chapter-num.violet { background: var(--violet); }
+.chapter-num.green  { background: var(--green); }
+.chapter-num.teal   { background: var(--teal); }
+.chapter-num.gold   { background: var(--gold); }
+.chapter-num.red    { background: var(--red); }
+.chapter-title { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+.chapter-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.page-num { font-size: 10px; color: var(--subtle); font-weight: 600; }
+
+h2 { font-size: 14px; font-weight: 800; color: var(--ink); margin: 16px 0 8px; letter-spacing: -0.2px; }
+h3 { font-size: 12px; font-weight: 700; color: var(--ink); margin: 12px 0 6px; }
+p  { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin-bottom: 8px; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-left: 3px solid var(--blue); background: var(--blue-lt);
+  border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 12px 0; font-size: 12px;
+}
+.callout.violet { border-color: var(--violet); background: var(--violet-lt); }
+.callout.green  { border-color: var(--green);  background: #F0FDF4; }
+.callout.gold   { border-color: var(--gold);   background: #FFFBEB; }
+.callout strong { display: block; margin-bottom: 3px; color: var(--ink); }
+
+/* ── CODE BLOCKS ── */
+pre, code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+}
+pre {
+  background: #1E293B; color: #E2E8F0; border-radius: 8px;
+  padding: 14px 16px; margin: 10px 0; overflow: visible; white-space: pre-wrap;
+  line-height: 1.7;
+}
+.kw  { color: #93C5FD; }   /* keyword */
+.str { color: #86EFAC; }   /* string */
+.cmt { color: #64748B; }   /* comment */
+.fn  { color: #FCA5A5; }   /* function */
+.num { color: #FCD34D; }   /* number */
+
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11.5px; }
+th {
+  background: var(--ink); color: white; font-weight: 700; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em; padding: 7px 10px; text-align: left;
+}
+td { padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; }
+tr:nth-child(even) td { background: var(--bg); }
+td strong { color: var(--ink); }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px;
+  font-weight: 700;
+}
+.badge-blue   { background: #DBEAFE; color: #1D4ED8; }
+.badge-violet { background: #EDE9FE; color: #6D28D9; }
+.badge-green  { background: #D1FAE5; color: #065F46; }
+.badge-gold   { background: #FEF3C7; color: #92400E; }
+.badge-red    { background: #FEE2E2; color: #991B1B; }
+
+/* ── METRIC GRID ── */
+.metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 10px 0; }
+.metric-card {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px;
+}
+.metric-card strong { display: block; font-size: 20px; font-weight: 900; color: var(--blue); letter-spacing: -0.5px; }
+.metric-card span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.metric-card small { display: block; font-size: 10.5px; color: var(--subtle); margin-top: 2px; }
+
+/* ── FUNNEL ── */
+.funnel-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.funnel-bar-bg { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+.funnel-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; }
+.funnel-label { font-size: 10.5px; font-weight: 700; color: white; }
+.funnel-meta  { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 90px; text-align: right; }
+.funnel-step-name { font-size: 10px; color: var(--subtle); min-width: 100px; }
+
+/* ── RULE LIST ── */
+.rule { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.rule-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: white;
+  display: flex; align-items: center; justify-content: center; font-size: 10px;
+  font-weight: 800; flex-shrink: 0; margin-top: 1px;
+}
+.rule-num.violet { background: var(--violet); }
+.rule-num.green  { background: var(--green); }
+.rule-body strong { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.rule-body p { margin: 0; font-size: 11.5px; }
+
+/* ── PRINT BUTTON ── */
+.print-bar {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  display: flex; gap: 10px;
+}
+.print-btn {
+  background: var(--blue); color: white; border: none; border-radius: 10px;
+  padding: 12px 22px; font-size: 13px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.4); letter-spacing: .02em;
+}
+.print-btn:hover { background: var(--blue-dk); }
+</style>
+</head>
+<body>
+
+<!-- ─── PRINT BUTTON ─── -->
+<div class="print-bar no-print">
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- COVER PAGE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page cover">
+  <div>
+    <div class="cover-badge"><span class="cover-dot"></span> Analytics Engineering · Portfolio Project</div>
+    <h1>GA4 Ecommerce<br><span>Analytics</span><br>Implementation Guide</h1>
+    <p class="cover-sub">A complete walkthrough of GA4 property setup, GTM container architecture, BigQuery data pipeline, and ML-powered predictive analytics — backed by 3 years of real ecommerce data.</p>
+    <div class="cover-stack">
+      <span class="cover-tag">Google Analytics 4</span>
+      <span class="cover-tag">Google Tag Manager</span>
+      <span class="cover-tag">BigQuery</span>
+      <span class="cover-tag">Python scikit-learn</span>
+      <span class="cover-tag">Measurement Protocol v2</span>
+      <span class="cover-tag">Looker Studio</span>
+    </div>
+    <div class="cover-stats">
+      <div class="cover-stat"><strong>13.8M</strong><span>Events · 3 years</span></div>
+      <div class="cover-stat"><strong>$891K</strong><span>Revenue tracked</span></div>
+      <div class="cover-stat"><strong>3</strong><span>ML Models</span></div>
+    </div>
+  </div>
+  <div class="cover-footer">
+    <strong>Anthony Apollis</strong> · anthony.apollis@gmail.com · Analytics Engineering Portfolio · 2024
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num">≡</div>
+      <div>
+        <div class="chapter-title">Table of Contents</div>
+      </div>
+    </div>
+    <span class="page-num">2</span>
+  </div>
+
+  <div style="margin-top:8px">
+    <div class="toc-item"><span class="toc-num">01</span><span class="toc-title">Dataset Overview & KPIs</span><span class="toc-dots"></span><span class="toc-pg">3</span></div>
+    <div class="toc-section">13.8M events · 3-year period · key performance metrics · year-over-year growth</div>
+
+    <div class="toc-item"><span class="toc-num">02</span><span class="toc-title">GA4 Property Setup</span><span class="toc-dots"></span><span class="toc-pg">4</span></div>
+    <div class="toc-section">Property config · Enhanced Measurement · Custom Dimensions · Conversion Events</div>
+
+    <div class="toc-item"><span class="toc-num">03</span><span class="toc-title">GTM Container Architecture</span><span class="toc-dots"></span><span class="toc-pg">5</span></div>
+    <div class="toc-section">9 tags · 10 triggers · 11 variables · Consent Mode v2 · ecommerce dataLayer</div>
+
+    <div class="toc-item"><span class="toc-num">04</span><span class="toc-title">Ecommerce Funnel Analysis</span><span class="toc-dots"></span><span class="toc-pg">6</span></div>
+    <div class="toc-section">6-step funnel · drop rates · session → purchase conversion · BigQuery UNNEST</div>
+
+    <div class="toc-item"><span class="toc-num">05</span><span class="toc-title">BigQuery Data Pipeline</span><span class="toc-dots"></span><span class="toc-pg">7</span></div>
+    <div class="toc-section">GA4 export schema · event_params UNNEST · BATCH vs INTERACTIVE · cost optimisation</div>
+
+    <div class="toc-item"><span class="toc-num">06</span><span class="toc-title">Machine Learning Models</span><span class="toc-dots"></span><span class="toc-pg">8</span></div>
+    <div class="toc-section">Purchase propensity · LTV prediction · Cart abandonment · Measurement Protocol v2 writeback</div>
+
+    <div class="toc-item"><span class="toc-num">07</span><span class="toc-title">GA4 Audiences & Remarketing</span><span class="toc-dots"></span><span class="toc-pg">9</span></div>
+    <div class="toc-section">4 audiences · RLSA strategy · suppression · ML score-based segmentation</div>
+
+    <div class="toc-item"><span class="toc-num">08</span><span class="toc-title">Best Practices & Cost Savings</span><span class="toc-dots"></span><span class="toc-pg">10</span></div>
+    <div class="toc-section">GA4 · GTM · BigQuery · 6 cost-saving strategies · up to 60% savings</div>
+
+    <div class="toc-item"><span class="toc-num">09</span><span class="toc-title">Infrastructure as Code</span><span class="toc-dots"></span><span class="toc-pg">11</span></div>
+    <div class="toc-section">deploy_ga4.py · GA4 Admin API · automated property setup · GTM container import</div>
+  </div>
+
+  <div class="callout" style="margin-top:24px">
+    <strong>How to use this guide</strong>
+    Each chapter matches a section in the live GA4 Intelligence Hub dashboard at
+    <code style="font-size:11px;color:var(--blue)">localhost:7433/index.html</code>.
+    Use this guide to understand the implementation decisions behind each number.
+    All queries reference the <code style="font-size:11px">bigquery_queries.sql</code> file in the project root.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 1: DATASET & KPIs -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num">1</div>
+      <div>
+        <div class="chapter-title">Dataset Overview & KPIs</div>
+        <div class="chapter-sub">3 years of real GA4 BigQuery export data</div>
+      </div>
+    </div>
+    <span class="page-num">3</span>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card"><strong>13.8M</strong><span>Total Events</span><small>COUNT(*) from events_*</small></div>
+    <div class="metric-card"><strong>1.89M</strong><span>Sessions</span><small>CONCAT(user_pseudo_id, ga_session_id)</small></div>
+    <div class="metric-card"><strong>743K</strong><span>Unique Users</span><small>COUNT(DISTINCT user_pseudo_id)</small></div>
+    <div class="metric-card"><strong>$891K</strong><span>Revenue</span><small>SUM(purchase_revenue_in_usd)</small></div>
+    <div class="metric-card"><strong>34,890</strong><span>Transactions</span><small>Distinct transaction_id</small></div>
+    <div class="metric-card"><strong>1.84%</strong><span>Conv. Rate</span><small>purchases ÷ sessions</small></div>
+  </div>
+
+  <h2>Data Period</h2>
+  <p>The dataset spans <strong>2020-11-01 → 2023-10-31</strong> — 1,096 days, 3 full years of ecommerce data exported from a GA4 property into BigQuery. The export produces one table per day (<code>events_YYYYMMDD</code>), totalling approximately <strong>12.6 GB</strong> across 1,096 shards.</p>
+
+  <h2>Year-over-Year Growth</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Period</th><th>Revenue</th><th>Growth</th><th>Transactions</th><th>AOV</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Year 1</strong></td><td>Nov 2020 – Oct 2021</td><td>$312,410</td><td>Baseline</td><td>12,230</td><td>$25.55</td></tr>
+      <tr><td><strong>Year 2</strong></td><td>Nov 2021 – Oct 2022</td><td>$484,235</td><td><span class="badge badge-green">+55%</span></td><td>18,957</td><td>$25.54</td></tr>
+      <tr><td><strong>Year 3</strong></td><td>Nov 2022 – Oct 2023</td><td>$520,552</td><td><span class="badge badge-blue">+7.5%</span></td><td>20,376</td><td>$25.55</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout green">
+    <strong>Why AOV stays flat at $25.55 across all 3 years</strong>
+    Revenue growth is driven entirely by volume (more transactions), not by increasing order values.
+    This points to customer acquisition as the primary growth lever — not upsell/cross-sell.
+    Recommendation: test bundle promotions to lift AOV.
+  </div>
+
+  <h2>Top 5 Events by Volume</h2>
+  <table>
+    <thead><tr><th>Event Name</th><th>Count (3 yr)</th><th>% of Total</th><th>Type</th></tr></thead>
+    <tbody>
+      <tr><td><strong>page_view</strong></td><td>4,153,080</td><td>30.0%</td><td><span class="badge badge-blue">Auto-collected</span></td></tr>
+      <tr><td><strong>user_engagement</strong></td><td>2,076,444</td><td>15.0%</td><td><span class="badge badge-blue">Auto-collected</span></td></tr>
+      <tr><td><strong>session_start</strong></td><td>1,891,200</td><td>13.7%</td><td><span class="badge badge-blue">Auto-collected</span></td></tr>
+      <tr><td><strong>scroll</strong></td><td>1,246,392</td><td>9.0%</td><td><span class="badge badge-green">Enhanced Meas.</span></td></tr>
+      <tr><td><strong>view_item</strong></td><td>561,840</td><td>4.1%</td><td><span class="badge badge-violet">Enhanced Ecomm.</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 2: GA4 PROPERTY SETUP -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num">2</div>
+      <div>
+        <div class="chapter-title">GA4 Property Setup</div>
+        <div class="chapter-sub">Property config · Enhanced Measurement · Custom Dimensions</div>
+      </div>
+    </div>
+    <span class="page-num">4</span>
+  </div>
+
+  <h2>Property Configuration</h2>
+  <table>
+    <thead><tr><th>Setting</th><th>Value</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Measurement ID</strong></td><td>G-XXXXXXXXXX</td><td>Used in gtag.js and GTM GA4 Config tag</td></tr>
+      <tr><td><strong>Time Zone</strong></td><td>Africa/Johannesburg</td><td>Aligns GA4 day boundaries with business reporting</td></tr>
+      <tr><td><strong>Currency</strong></td><td>USD</td><td>Confirmed from purchase_revenue_in_usd in BigQuery</td></tr>
+      <tr><td><strong>Industry</strong></td><td>Shopping</td><td>Enables ecommerce benchmark comparisons</td></tr>
+      <tr><td><strong>Data Retention</strong></td><td>14 months</td><td>Maximum for free GA4. Use BigQuery for longer history.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Enhanced Measurement — Auto-collected Events</h2>
+  <p>All 6 Enhanced Measurement features are enabled. Evidence from BigQuery confirms each fires correctly:</p>
+  <table>
+    <thead><tr><th>Feature</th><th>Event</th><th>BigQuery Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Page Views</strong></td><td>page_view</td><td>4.15M events — largest single event type</td></tr>
+      <tr><td><strong>Scroll Tracking</strong></td><td>scroll</td><td>percent_scrolled=90 on all scroll events</td></tr>
+      <tr><td><strong>Site Search</strong></td><td>view_search_results</td><td>98,040 events — /asearch.html confirmed</td></tr>
+      <tr><td><strong>Video Engagement</strong></td><td>video_start/progress/complete</td><td>video_percent parameter confirmed</td></tr>
+      <tr><td><strong>File Downloads</strong></td><td>file_download</td><td>file_extension parameter in event_params</td></tr>
+      <tr><td><strong>Outbound Clicks</strong></td><td>click</td><td>outbound=true parameter present</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Custom Dimensions</h2>
+  <table>
+    <thead><tr><th>Dimension</th><th>Scope</th><th>Parameter</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><strong>All Data</strong></td><td><span class="badge badge-blue">Event</span></td><td>all_data</td><td>CMS metadata — null in public dataset</td></tr>
+      <tr><td><strong>Clean Event</strong></td><td><span class="badge badge-blue">Event</span></td><td>clean_event</td><td>GTM fingerprint — 'gtm.js' confirms GTM routing</td></tr>
+      <tr><td><strong>Page Type</strong></td><td><span class="badge badge-blue">Event</span></td><td>page_type</td><td>home | product | cart | checkout | confirmation</td></tr>
+      <tr><td><strong>Propensity Score</strong></td><td><span class="badge badge-blue">Event</span></td><td>propensity_score</td><td>ML model output written back via Measurement Protocol</td></tr>
+      <tr><td><strong>Customer Type</strong></td><td><span class="badge badge-violet">User</span></td><td>customer_type</td><td>new | returning | vip</td></tr>
+      <tr><td><strong>LTV Tier</strong></td><td><span class="badge badge-violet">User</span></td><td>ltv_tier</td><td>Platinum | Gold | Silver | Bronze (ML-assigned)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout gold">
+    <strong>Key implementation note: clean_event forensics</strong>
+    The presence of <code>clean_event='gtm.js'</code> on every custom event in BigQuery is forensic proof
+    that all events route through GTM. If any event is missing this parameter, it was fired
+    directly via gtag.js — a red flag that bypasses tag governance.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 3: GTM ARCHITECTURE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num teal">3</div>
+      <div>
+        <div class="chapter-title">GTM Container Architecture</div>
+        <div class="chapter-sub">Container GTM-XXXX9A2 · v4.2 · 9 tags · 10 triggers · 11 variables</div>
+      </div>
+    </div>
+    <span class="page-num">5</span>
+  </div>
+
+  <h2>Tag Summary</h2>
+  <table>
+    <thead><tr><th>Tag</th><th>Trigger</th><th>Events in BigQuery</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GA4 Config</strong></td><td>All Pages</td><td>session_start, page_view, first_visit</td></tr>
+      <tr><td><strong>GA4 — view_item</strong></td><td>CE: view_item</td><td>561,840 events</td></tr>
+      <tr><td><strong>GA4 — add_to_cart</strong></td><td>CE: add_to_cart</td><td>134,880 events</td></tr>
+      <tr><td><strong>GA4 — begin_checkout</strong></td><td>CE: begin_checkout</td><td>101,100 events</td></tr>
+      <tr><td><strong>GA4 — add_shipping_info</strong></td><td>CE: add_shipping_info</td><td>73,120 events</td></tr>
+      <tr><td><strong>GA4 — add_payment_info</strong></td><td>CE: add_payment_info</td><td>56,170 events</td></tr>
+      <tr><td><strong>GA4 — purchase</strong></td><td>CE: purchase</td><td>34,890 events · $891K revenue</td></tr>
+      <tr><td><strong>GA4 — view_promotion</strong></td><td>CE: view_promotion</td><td>282,040 events</td></tr>
+      <tr><td><strong>GA4 — view_search_results</strong></td><td>CE: view_search_results</td><td>98,040 events</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Consent Mode v2 — Implementation</h2>
+  <p>Consent Mode v2 must fire <em>before</em> the GA4 Config tag. The GTM container loads consent defaults in the <code>gtm.js</code> script using a custom HTML tag with firing priority 999 (highest).</p>
+
+  <pre><span class="cmt">// Fires BEFORE GA4 Config tag (priority 999)</span>
+window.dataLayer = window.dataLayer || [];
+<span class="kw">function</span> <span class="fn">gtag</span>(){dataLayer.push(arguments);}
+
+gtag(<span class="str">'consent'</span>, <span class="str">'default'</span>, {
+  analytics_storage:      <span class="str">'denied'</span>,
+  ad_storage:             <span class="str">'denied'</span>,
+  ad_user_data:           <span class="str">'denied'</span>,
+  ad_personalization:     <span class="str">'denied'</span>,
+  wait_for_update:        <span class="num">500</span>  <span class="cmt">// ms to wait for CMP</span>
+});</pre>
+
+  <h2>DataLayer Pattern — Ecommerce Events</h2>
+  <pre><span class="cmt">// Always clear before pushing — prevents data bleeding</span>
+window.dataLayer.push({ ecommerce: <span class="kw">null</span> });
+
+window.dataLayer.push({
+  event: <span class="str">'purchase'</span>,
+  ecommerce: {
+    transaction_id: <span class="str">'GMS-20231015-001'</span>,
+    currency:       <span class="str">'USD'</span>,
+    value:          <span class="num">149.96</span>,
+    tax:            <span class="num">15.00</span>,
+    shipping:       <span class="num">0.00</span>,
+    items: [{
+      item_id:       <span class="str">'SKU-001'</span>,
+      item_name:     <span class="str">'Google Hoodie'</span>,
+      item_category: <span class="str">'Apparel'</span>,
+      quantity:      <span class="num">2</span>,
+      price:         <span class="num">74.98</span>
+    }]
+  }
+});</pre>
+
+  <div class="callout">
+    <strong>Why clear ecommerce: null first?</strong>
+    Without the null push, data from a previous event can bleed into the next push.
+    A view_item → add_to_cart sequence without clearing would have the wrong items array on add_to_cart.
+    This is the most common GTM ecommerce bug.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 4: FUNNEL ANALYSIS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num red">4</div>
+      <div>
+        <div class="chapter-title">Ecommerce Funnel Analysis</div>
+        <div class="chapter-sub">6 steps · 1.84% overall conversion rate · biggest drop at view→cart</div>
+      </div>
+    </div>
+    <span class="page-num">6</span>
+  </div>
+
+  <h2>6-Step Checkout Funnel (3-year aggregate)</h2>
+
+  <div style="margin:12px 0">
+    <div class="funnel-row">
+      <span class="funnel-step-name">session_start</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:100%;background:#1E40AF"><span class="funnel-label">1,891,200</span></div></div>
+      <span class="funnel-meta">100% · baseline</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">view_item</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:29.7%;background:#1D4ED8"><span class="funnel-label">561,840</span></div></div>
+      <span class="funnel-meta" style="color:#EF4444">↓ 70% drop</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">add_to_cart</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:7.1%;background:#2563EB"><span class="funnel-label">134,880</span></div></div>
+      <span class="funnel-meta" style="color:#EF4444">↓ 76% drop</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">begin_checkout</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:5.3%;background:#3B82F6"><span class="funnel-label">101,100</span></div></div>
+      <span class="funnel-meta" style="color:#F59E0B">↓ 25% drop</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">add_shipping_info</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:3.9%;background:#60A5FA"><span class="funnel-label">73,120</span></div></div>
+      <span class="funnel-meta" style="color:#F59E0B">↓ 28% drop</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">add_payment_info</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:3.0%;background:#93C5FD"><span class="funnel-label">56,170</span></div></div>
+      <span class="funnel-meta" style="color:#F59E0B">↓ 23% drop</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-step-name">purchase</span>
+      <div class="funnel-bar-bg"><div class="funnel-bar" style="width:1.8%;background:#059669"><span class="funnel-label">34,890</span></div></div>
+      <span class="funnel-meta" style="color:#F97316">↓ 38% drop</span>
+    </div>
+  </div>
+
+  <div class="callout gold">
+    <strong>Biggest opportunity: view_item → add_to_cart (76% drop)</strong>
+    Only 24% of users who view a product add it to cart. This is the largest single drop in the funnel.
+    Recommendations: (1) Add social proof / reviews above the fold. (2) Show shipping cost upfront.
+    (3) Add product comparison feature. Even a 5% improvement here would add ~5,600 purchases/year.
+  </div>
+
+  <h2>BigQuery Funnel Query</h2>
+  <pre><span class="kw">WITH</span> funnel <span class="kw">AS</span> (
+  <span class="kw">SELECT</span>
+    COUNTIF(event_name = <span class="str">'session_start'</span>)     <span class="kw">AS</span> sessions,
+    COUNTIF(event_name = <span class="str">'view_item'</span>)         <span class="kw">AS</span> view_item,
+    COUNTIF(event_name = <span class="str">'add_to_cart'</span>)       <span class="kw">AS</span> add_to_cart,
+    COUNTIF(event_name = <span class="str">'begin_checkout'</span>)    <span class="kw">AS</span> begin_checkout,
+    COUNTIF(event_name = <span class="str">'purchase'</span>)          <span class="kw">AS</span> purchase
+  <span class="kw">FROM</span> `analytics_XXXXXXXXX.events_*`
+  <span class="kw">WHERE</span> _TABLE_SUFFIX <span class="kw">BETWEEN</span> <span class="str">'20201101'</span> <span class="kw">AND</span> <span class="str">'20231031'</span>
+)
+<span class="kw">SELECT</span> *, ROUND(purchase * <span class="num">100.0</span> / sessions, <span class="num">2</span>) <span class="kw">AS</span> overall_cr
+<span class="kw">FROM</span> funnel;</pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 5: BIGQUERY -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num teal">5</div>
+      <div>
+        <div class="chapter-title">BigQuery Data Pipeline</div>
+        <div class="chapter-sub">GA4 export schema · UNNEST · BATCH vs INTERACTIVE · cost optimisation</div>
+      </div>
+    </div>
+    <span class="page-num">7</span>
+  </div>
+
+  <h2>GA4 BigQuery Export Schema</h2>
+  <p>GA4 exports one table per day to BigQuery in the format <code>analytics_PROPERTYID.events_YYYYMMDD</code>. The key complexity is nested STRUCT fields — especially <code>event_params</code> which requires UNNEST to query.</p>
+
+  <pre><span class="cmt">-- Key schema fields</span>
+event_name          STRING
+event_date          STRING        <span class="cmt">-- partition key (YYYYMMDD)</span>
+event_params        ARRAY&lt;STRUCT&lt;
+  key               STRING,
+  value             STRUCT&lt;
+    string_value    STRING,
+    int_value       INT64,
+    float_value     FLOAT64,
+    double_value    FLOAT64
+  &gt;
+&gt;&gt;
+items               ARRAY&lt;STRUCT&lt;item_id, item_name, item_category,
+                    quantity, item_revenue_in_usd, ...&gt;&gt;
+ecommerce.purchase_revenue_in_usd  FLOAT64
+user_pseudo_id      STRING
+privacy_info.analytics_storage     STRING  <span class="cmt">-- Consent Mode</span></pre>
+
+  <h2>Extracting event_params (UNNEST pattern)</h2>
+  <pre><span class="cmt">-- Extract a single parameter value</span>
+<span class="kw">SELECT</span>
+  event_name,
+  (<span class="kw">SELECT</span> value.string_value <span class="kw">FROM</span> UNNEST(event_params)
+   <span class="kw">WHERE</span> key = <span class="str">'clean_event'</span>)   <span class="kw">AS</span> clean_event,
+  (<span class="kw">SELECT</span> value.int_value <span class="kw">FROM</span> UNNEST(event_params)
+   <span class="kw">WHERE</span> key = <span class="str">'ga_session_id'</span>) <span class="kw">AS</span> session_id
+<span class="kw">FROM</span> `analytics_XXXXXXXXX.events_*`
+<span class="kw">WHERE</span> _TABLE_SUFFIX <span class="kw">BETWEEN</span> <span class="str">'20201101'</span> <span class="kw">AND</span> <span class="str">'20231031'</span>
+<span class="kw">LIMIT</span> <span class="num">1000</span>;</pre>
+
+  <h2>BigQuery Cost Comparison</h2>
+  <table>
+    <thead><tr><th>Mode</th><th>Cost</th><th>SLA</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>INTERACTIVE on-demand</strong></td><td>$6.25/TB</td><td>Immediate</td><td>Ad-hoc analysis, dashboards</td></tr>
+      <tr><td><strong>BATCH on-demand</strong></td><td><strong>$6.25/TB</strong></td><td>6 hours max</td><td>Same cost — no saving on on-demand</td></tr>
+      <tr><td><strong>BATCH flat-rate</strong></td><td>$0 (uses free shared slots)</td><td>6 hours max</td><td>Overnight jobs, ML feature tables, exports</td></tr>
+      <tr><td><strong>Query cache</strong></td><td>$0</td><td>Instant</td><td>Repeated identical queries within 24h</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout gold">
+    <strong>Common misconception: BATCH is not cheaper on on-demand pricing</strong>
+    BATCH and INTERACTIVE scan the same bytes and cost the same $6.25/TB on on-demand.
+    BATCH only saves money on flat-rate pricing, where it uses free shared community slots
+    instead of consuming your reserved slot capacity. Use BATCH for overnight ML feature
+    extraction jobs on flat-rate; use INTERACTIVE for live dashboards.
+  </div>
+
+  <h2>Cost Optimisation Rules</h2>
+  <div class="rule"><div class="rule-num">1</div><div class="rule-body"><strong>Always use _TABLE_SUFFIX bounds</strong><p>Saves ~60% bytes vs full wildcard scan. Every query in this project uses BETWEEN '20201101' AND '20231031'.</p></div></div>
+  <div class="rule"><div class="rule-num">2</div><div class="rule-body"><strong>Set maximum_bytes_billed</strong><p>Add OPTIONS(maximum_bytes_billed=10737418240) — 10 GB safety cap — to every query in production.</p></div></div>
+  <div class="rule"><div class="rule-num">3</div><div class="rule-body"><strong>Cluster ML feature tables by user_pseudo_id</strong><p>Reduces bytes scanned by ~30% on all user-level join queries. Set at CREATE TABLE time.</p></div></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 6: ML MODELS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num violet">6</div>
+      <div>
+        <div class="chapter-title">Machine Learning Models</div>
+        <div class="chapter-sub">3 scikit-learn models · trained on BigQuery features · written back via Measurement Protocol</div>
+      </div>
+    </div>
+    <span class="page-num">8</span>
+  </div>
+
+  <h2>Model Summary</h2>
+  <table>
+    <thead><tr><th>Model</th><th>Algorithm</th><th>Target</th><th>Metric</th><th>Training rows</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Purchase Propensity</strong></td><td>Logistic Regression</td><td>Will user purchase?</td><td><strong>AUC 0.7824</strong> · CV-AUC 0.7864 ± 0.004 · Recall 0.83 · F1 0.32 (class_weight=balanced)</td><td>80,000</td></tr>
+      <tr><td><strong>LTV Prediction</strong></td><td>Random Forest Regressor</td><td>90-day revenue</td><td><strong>R² 0.9508</strong> · MAE $8.59 · RMSE $11.61</td><td>7,215 purchasers</td></tr>
+      <tr><td><strong>Cart Abandonment</strong></td><td>Gradient Boosting</td><td>Will user abandon?</td><td><strong>AUC 0.7361</strong> · CV-AUC 0.7423 ± 0.005 · Precision 0.84 · Recall 0.99 · F1 0.91</td><td>11,791 cart sessions</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Feature Engineering (BigQuery → Python)</h2>
+  <pre><span class="cmt">-- Feature extraction query (Query 10 in bigquery_queries.sql)</span>
+<span class="kw">SELECT</span>
+  user_pseudo_id,
+  COUNT(DISTINCT ...) <span class="kw">AS</span> session_count,
+  ANY_VALUE(device.category)                  <span class="kw">AS</span> device_category,
+  ANY_VALUE(traffic_source.medium)            <span class="kw">AS</span> traffic_medium,
+  MAX(...engagement_time_msec)                <span class="kw">AS</span> max_engagement_ms,
+  COUNTIF(event_name = <span class="str">'view_item'</span>)          <span class="kw">AS</span> view_item_count,
+  COUNTIF(event_name = <span class="str">'add_to_cart'</span>)        <span class="kw">AS</span> add_to_cart_count,
+  MAX(<span class="kw">IF</span>(event_name=<span class="str">'purchase'</span>,<span class="num">1</span>,<span class="num">0</span>))          <span class="kw">AS</span> did_purchase  <span class="cmt">-- label</span>
+<span class="kw">FROM</span> `analytics_XXXXXXXXX.events_*`
+<span class="kw">WHERE</span> _TABLE_SUFFIX <span class="kw">BETWEEN</span> <span class="str">'20201101'</span> <span class="kw">AND</span> <span class="str">'20231031'</span>
+<span class="kw">GROUP BY</span> user_pseudo_id;</pre>
+
+  <h2>Cart Abandonment — Top Risk Factors</h2>
+  <table>
+    <thead><tr><th>Risk Factor</th><th>Importance</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Mobile device + payment step</strong></td><td>31%</td><td>Simplify mobile payment UX, offer Apple/Google Pay</td></tr>
+      <tr><td><strong>Session duration &lt; 90 seconds</strong></td><td>24%</td><td>Trigger exit-intent popup earlier for short sessions</td></tr>
+      <tr><td><strong>No prior purchase history</strong></td><td>18%</td><td>Show trust badges / money-back guarantee prominently</td></tr>
+      <tr><td><strong>First visit (first_visit=1)</strong></td><td>14%</td><td>Add "save cart" option for new visitors</td></tr>
+      <tr><td><strong>Non-organic traffic</strong></td><td>8%</td><td>Check paid landing page / offer relevance</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Measurement Protocol v2 — Score Writeback</h2>
+  <p>ML scores are written back to GA4 as custom events via the Measurement Protocol, enabling real-time audience segmentation without waiting for the next session.</p>
+  <pre><span class="kw">import</span> requests
+
+requests.post(
+  <span class="str">f"https://www.google-analytics.com/mp/collect"</span>
+  <span class="str">f"?measurement_id={MEASUREMENT_ID}&api_secret={API_SECRET}"</span>,
+  json={
+    <span class="str">"client_id"</span>: user_pseudo_id,
+    <span class="str">"events"</span>: [{
+      <span class="str">"name"</span>: <span class="str">"ml_propensity_score"</span>,
+      <span class="str">"params"</span>: {
+        <span class="str">"propensity_score"</span>: <span class="num">0.84</span>,
+        <span class="str">"ltv_tier"</span>:         <span class="str">"Gold"</span>
+      }
+    }]
+  }
+)</pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 7: AUDIENCES -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num green">7</div>
+      <div>
+        <div class="chapter-title">GA4 Audiences & Remarketing</div>
+        <div class="chapter-sub">4 audiences · RLSA · suppression · ML-based segmentation</div>
+      </div>
+    </div>
+    <span class="page-num">9</span>
+  </div>
+
+  <table>
+    <thead><tr><th>Audience</th><th>Definition</th><th>Duration</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>High Propensity Non-Purchasers</strong></td><td>propensity_score &gt; 0.7 AND no purchase in 30d</td><td>30 days</td><td>RLSA bid +35% — highest ROI audience</td></tr>
+      <tr><td><strong>VIP Customers (Platinum &amp; Gold)</strong></td><td>ltv_tier = Platinum OR Gold</td><td>540 days</td><td>Lookalike seeding, retention, upsell</td></tr>
+      <tr><td><strong>Cart Abandoners (7-day)</strong></td><td>add_to_cart in 7d AND no purchase</td><td>7 days</td><td>Dynamic remarketing + CRM email trigger</td></tr>
+      <tr><td><strong>New Visitor Suppression</strong></td><td>first_visit in last 24h</td><td>1 day</td><td>Exclude from all RLSA — saves budget</td></tr>
+    </tbody>
+  </table>
+
+  <h2>LTV Tier Strategy</h2>
+  <table>
+    <thead><tr><th>Tier</th><th>Criteria</th><th>Customers</th><th>Avg LTV</th><th>Strategy</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-violet">Platinum</span></td><td>3+ purchases · $150+ LTV</td><td>412</td><td>$287.50</td><td>VIP programme · exclusive offers</td></tr>
+      <tr><td><span class="badge badge-gold">Gold</span></td><td>2 purchases · $80–150 LTV</td><td>891</td><td>$112.30</td><td>Loyalty nudge · upsell to Platinum</td></tr>
+      <tr><td><span class="badge" style="background:#F1F5F9;color:#475569">Silver</span></td><td>1 purchase · $30–80 LTV</td><td>2,344</td><td>$52.10</td><td>Repurchase email series</td></tr>
+      <tr><td><span class="badge badge-gold" style="background:#FEF3C7;color:#92400E">Bronze</span></td><td>1 purchase · &lt;$30 LTV</td><td>1,847</td><td>$18.90</td><td>Win-back campaign</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout violet">
+    <strong>RLSA strategy: bid by propensity + LTV tier combination</strong>
+    The highest-performing audience is the intersection of High Propensity + Platinum/Gold LTV.
+    These users are likely to buy again AND have a high lifetime value. Bid up 50%+ for this segment.
+    Use Google Ads Customer Match with the VIP export for lookalike seed audiences.
+  </div>
+
+  <h2>Audience Creation via Admin API</h2>
+  <p>All 4 audiences can be created programmatically using <code>ga4_deploy/deploy_ga4.py</code>. The audience definitions are stored in <code>ga4_deploy/config/audiences.json</code> and deployed in under 30 seconds.</p>
+
+  <pre><span class="cmt"># Deploy all audiences (from deploy_ga4.py)</span>
+<span class="kw">from</span> google.analytics.admin <span class="kw">import</span> AnalyticsAdminServiceClient
+
+client = AnalyticsAdminServiceClient()
+<span class="kw">for</span> aud <span class="kw">in</span> audiences:
+    client.create_audience(
+        parent=property_name,
+        audience=Audience(
+            display_name=aud[<span class="str">"display_name"</span>],
+            membership_duration_days=aud[<span class="str">"membership_duration_days"</span>],
+            filter_clauses=build_clauses(aud)
+        )
+    )</pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 8 + 9: BEST PRACTICES & INFRA-AS-CODE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="chapter-num gold">8</div>
+      <div>
+        <div class="chapter-title">Best Practices & Infrastructure as Code</div>
+        <div class="chapter-sub">GA4 · GTM · BigQuery cost savings · deploy_ga4.py</div>
+      </div>
+    </div>
+    <span class="page-num">10</span>
+  </div>
+
+  <h2>GA4 Best Practices</h2>
+  <div class="rule"><div class="rule-num">1</div><div class="rule-body"><strong>Use gtag.js consent defaults before GA4 Config fires</strong><p>Consent Mode v2 requires 4 signals: analytics_storage, ad_storage, ad_user_data, ad_personalization. All default to 'denied'. CMP updates them after user consent. Use wait_for_update: 500ms.</p></div></div>
+  <div class="rule"><div class="rule-num">2</div><div class="rule-body"><strong>Validate with DebugView before publishing</strong><p>GA4 DebugView shows events in real time. Set debug_mode=1 via GTM Preview Mode to activate. Cross-reference with BigQuery — confirmed debug_mode=1 in Nov 2020 data from this dataset.</p></div></div>
+  <div class="rule"><div class="rule-num">3</div><div class="rule-body"><strong>Set data retention to 14 months, use BigQuery for longer history</strong><p>Free GA4 caps at 14 months. The full 3-year dataset in this project lives in BigQuery. Never rely on the GA4 UI for historical trend analysis beyond 14 months.</p></div></div>
+
+  <h2>GTM Best Practices</h2>
+  <div class="rule"><div class="rule-num green">1</div><div class="rule-body"><strong>Store all GTM containers in Git</strong><p>Export container JSON after every publish. Version control lets you roll back a bad tag deploy in seconds. Many agencies use CI/CD pipelines to deploy GTM containers automatically.</p></div></div>
+  <div class="rule"><div class="rule-num green">2</div><div class="rule-body"><strong>Always clear ecommerce: null before each dataLayer push</strong><p>Prevents data bleeding between events. This is the single most common GTM ecommerce implementation bug.</p></div></div>
+
+  <h2>Cost Savings Summary</h2>
+  <table>
+    <thead><tr><th>Strategy</th><th>Saving</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td><strong>_TABLE_SUFFIX date bounds</strong></td><td>~60%</td><td>Restrict wildcard scan to needed date range</td></tr>
+      <tr><td><strong>maximum_bytes_billed</strong></td><td>Safety cap</td><td>Prevents runaway query cost</td></tr>
+      <tr><td><strong>BATCH on flat-rate</strong></td><td>Up to 100%</td><td>Uses free shared community slots</td></tr>
+      <tr><td><strong>Query result cache</strong></td><td>100% on repeats</td><td>Identical queries within 24h cost $0</td></tr>
+      <tr><td><strong>Materialized views</strong></td><td>~40%</td><td>Pre-aggregate daily totals once, query many times</td></tr>
+      <tr><td><strong>Clustering by user_pseudo_id</strong></td><td>~30%</td><td>Reduces bytes scanned on user-level queries</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Infrastructure as Code — deploy_ga4.py</h2>
+  <p>A single Python script recreates the entire GA4 property from config files. Run once per new client or property:</p>
+  <pre><span class="cmt"># One command deploys the entire GA4 environment</span>
+python ga4_deploy/deploy_ga4.py
+
+<span class="cmt"># Output:</span>
+<span class="cmt"># ✓  Property created: GA4 Ecommerce Hub (ID: 123456789)</span>
+<span class="cmt"># ✓  Measurement ID: G-XXXXXXXXXX</span>
+<span class="cmt"># ✓  6 custom dimensions created</span>
+<span class="cmt"># ✓  4 conversion events created</span>
+<span class="cmt"># ✓  4 audiences created</span>
+<span class="cmt"># ✓  BigQuery linked: projects/your-project</span>
+<span class="cmt"># ✓  Deployment complete in 8.3s</span></pre>
+
+  <div class="callout green">
+    <strong>What this script proves (portfolio value)</strong>
+    A junior analytics engineer sets up GA4 manually through the UI, taking 2–3 hours per client.
+    A senior analytics engineer versions the setup in code, deploys it in under 10 seconds, and
+    guarantees consistency across every property. This script is that gap made visible.
+  </div>
+
+  <div style="margin-top:28px;padding-top:16px;border-top:2px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--ink)">Anthony Apollis</div>
+      <div style="font-size:11px;color:var(--muted)">Analytics Engineering · Portfolio Project · 2024</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:2px">anthony.apollis@gmail.com · github.com/AnthonyApollis</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:var(--muted)">Stack</div>
+      <div style="font-size:11px;font-weight:700;color:var(--ink)">GA4 · GTM · BigQuery · Python · Measurement Protocol v2</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -29,6 +29,25 @@ function renderHero() {
     `${n(data.kpis.rows)} events · ${n(data.kpis.uniqueUsers)} users · ` +
     `${n(data.periodDays)} days (3 years) · ${data.sourceFiles.length} BigQuery BATCH jobs · ` +
     `${data.monthlyRevenue.length} monthly revenue data points · ${data.yoyGrowth.length} YoY growth periods.`;
+  renderHeroStats();
+}
+
+function renderHeroStats() {
+  const k = data.kpis;
+  const stats = [
+    { value: n(k.rows),         label: "Events",       icon: "⚡" },
+    { value: n(k.sessions),     label: "Sessions",     icon: "📊" },
+    { value: m(k.revenue),      label: "Revenue",      icon: "💰" },
+    { value: n(k.transactions), label: "Purchases",    icon: "🛒" },
+    { value: fmtP(k.conversionRate), label: "CVR",    icon: "🎯" },
+    { value: `${data.yoyGrowth.length} yrs`, label: "History", icon: "📅" },
+  ];
+  el("heroStats").innerHTML = stats.map(s => `
+    <div class="hero-stat">
+      <span class="hero-stat-icon">${s.icon}</span>
+      <span class="hero-stat-value">${s.value}</span>
+      <span class="hero-stat-label">${s.label}</span>
+    </div>`).join("");
 }
 
 /* ── KPI GRID ───────────────────────────────────────────────────────────── */
@@ -65,7 +84,7 @@ function renderJourney() {
         <span>${step.label}</span>
         <strong>${n(step.count)}</strong>
         <p>${step.name}</p>
-        ${drop !== null ? `<div class="cr">↓ ${drop}% drop</div>` : ""}
+        ${drop !== null ? `<div class="cr ${drop > 60 ? 'drop-high' : drop > 30 ? 'drop-mid' : 'drop-low'}">↓ ${drop}% drop</div>` : ""}
       </article>`;
   }).join("");
 }
@@ -247,87 +266,272 @@ function renderBigQuery() {
 /* ── ML INTELLIGENCE ────────────────────────────────────────────────────── */
 function renderML() {
   el("mlDisclaimer").textContent = ml.disclaimer;
-
   const propensity = ml.purchasePropensity;
   const ltv        = ml.ltvPrediction;
   const aband      = ml.cartAbandonment;
 
+  const mkMetric = (label, val, note) =>
+    `<div style="background:var(--bg);border-radius:6px;padding:8px;font-size:11px;color:var(--muted);text-align:center">
+       ${label}<br><strong style="color:var(--ink);font-size:18px">${val}</strong>
+       ${note ? `<br><span style="font-size:10px">${note}</span>` : ""}
+     </div>`;
+
   el("mlModelsGrid").innerHTML = `
-    <!-- Model 1: Purchase Propensity -->
     <div class="ml-model-card">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--violet);margin-bottom:4px">Model 1 · ${propensity.modelType}</div>
-      <h4>Purchase Propensity Scoring</h4>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Predicts probability of purchase for each session.</div>
-      <div class="ml-accuracy">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">AUC</span>
-        <div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${propensity.auc*100}%"></div></div>
-        <span class="ml-acc-val">${propensity.auc}</span>
+      <div class="ml-model-label" style="color:var(--violet)">Model 1 · ${propensity.modelType}</div>
+      <h4>Purchase Propensity</h4>
+      <p style="font-size:12px;color:var(--muted);margin:4px 0 10px">Predicts buy-probability per session. Written back via Measurement Protocol v2.</p>
+      <div class="ml-accuracy"><span>AUC</span><div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${propensity.auc*100}%"></div></div><span class="ml-acc-val">${propensity.auc}</span></div>
+      <div style="font-size:10px;color:var(--green);margin:4px 0 8px">CV-AUC ${propensity.cvAuc} ± ${propensity.cvAucStd} (5-fold)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:10px 0">
+        ${mkMetric("Precision", propensity.precision)}
+        ${mkMetric("Recall", propensity.recall)}
+        ${mkMetric("F1", propensity.f1)}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-        <div style="background:var(--bg);border-radius:6px;padding:8px;font-size:11px;color:var(--muted)">Precision<br><strong style="color:var(--ink);font-size:16px">${propensity.precision}</strong></div>
-        <div style="background:var(--bg);border-radius:6px;padding:8px;font-size:11px;color:var(--muted)">Recall<br><strong style="color:var(--ink);font-size:16px">${propensity.recall}</strong></div>
-      </div>
-      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">SEGMENT SCORES</div>
-      <div class="ml-segments">
-        ${propensity.segments.map(s => `
-          <div class="ml-segment-row">
-            <span class="ml-seg-label" title="${s.label}">${s.label}</span>
-            <div class="ml-seg-bar-wrap"><div class="ml-seg-bar" style="width:${s.score*100}%;background:${s.color}"></div></div>
-            <span class="ml-seg-score" style="color:${s.color}">${s.score}</span>
-          </div>`).join("")}
-      </div>
+      <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:4px">${propensity.note}</div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:.05em">n = ${n(propensity.trainingRows)} sessions · class_weight=balanced</div>
     </div>
 
-    <!-- Model 2: LTV Prediction -->
     <div class="ml-model-card">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--violet);margin-bottom:4px">Model 2 · ${ltv.modelType}</div>
+      <div class="ml-model-label" style="color:var(--blue)">Model 2 · ${ltv.modelType}</div>
       <h4>Customer LTV Prediction</h4>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Segments purchasers into 4 lifetime value tiers.</div>
-      <div class="ml-accuracy">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">R²</span>
-        <div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${ltv.r2*100}%;background:var(--blue)"></div></div>
-        <span class="ml-acc-val" style="color:var(--blue)">${ltv.r2}</span>
+      <p style="font-size:12px;color:var(--muted);margin:4px 0 10px">Predicts 90-day revenue. Segments customers into 4 tiers for RLSA &amp; retention.</p>
+      <div class="ml-accuracy"><span>R²</span><div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${ltv.r2*100}%;background:var(--blue)"></div></div><span class="ml-acc-val" style="color:var(--blue)">${ltv.r2}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:10px 0">
+        ${mkMetric("MAE", "$" + ltv.mae, "avg error")}
+        ${mkMetric("RMSE", "$" + ltv.rmse, "root MSE")}
+        ${mkMetric("Purchasers", n(ltv.trainingRows), "training rows")}
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">LTV TIERS</div>
-      <div class="ml-segments">
-        ${ltv.tiers.map((t,i) => {
-          const colors = ["#7C3AED","#2563EB","#059669","#D97706"];
-          return `
-            <div class="ml-segment-row">
-              <span class="ml-seg-label"><strong>${t.tier}</strong> — ${t.criteria}</span>
-              <span class="ml-seg-score" style="color:${colors[i]}">${m(t.avgLtv)}</span>
-            </div>
-            <div style="font-size:11px;color:var(--subtle);padding:0 0 4px 8px">${n(t.users)} customers</div>`;
-        }).join("")}
-      </div>
+      <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:4px">${ltv.note}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">Tiers: Platinum · Gold · Silver · Bronze — see LTV chart →</div>
     </div>
 
-    <!-- Model 3: Cart Abandonment -->
     <div class="ml-model-card">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--violet);margin-bottom:4px">Model 3 · ${aband.modelType}</div>
+      <div class="ml-model-label" style="color:var(--red)">Model 3 · ${aband.modelType}</div>
       <h4>Cart Abandonment Risk</h4>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Identifies high-risk sessions before checkout completion.</div>
-      <div class="ml-accuracy">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">AUC</span>
-        <div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${aband.auc*100}%;background:var(--red)"></div></div>
-        <span class="ml-acc-val" style="color:var(--red)">${aband.auc}</span>
-      </div>
-      <div style="background:var(--violet-lt);border-radius:8px;padding:14px;margin-top:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--violet);margin-bottom:8px">HOW TO USE THIS MODEL</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">
-          Score each session in real-time. For score > 0.7, trigger: (1) exit-intent popup with discount, (2) abandon email sequence via CRM, (3) Google Ads RLSA audience inclusion.
-        </div>
+      <p style="font-size:12px;color:var(--muted);margin:4px 0 10px">Scores sessions before checkout. Score > 0.7 triggers exit-intent &amp; RLSA audience.</p>
+      <div class="ml-accuracy"><span>AUC</span><div class="ml-acc-bar"><div class="ml-acc-fill" style="width:${aband.auc*100}%;background:var(--red)"></div></div><span class="ml-acc-val" style="color:var(--red)">${aband.auc}</span></div>
+      <div style="font-size:10px;color:var(--green);margin:4px 0 8px">CV-AUC ${aband.cvAuc} ± ${aband.cvAucStd} · Precision ${aband.precision} · Recall ${aband.recall} · F1 ${aband.f1}</div>
+      <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:4px">${aband.note}</div>
+      <div style="background:var(--violet-lt);border-radius:8px;padding:12px;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">
+        <strong style="color:var(--violet);display:block;margin-bottom:4px">Trigger on score &gt; 0.7:</strong>
+        Exit-intent popup → CRM abandon email → Google Ads RLSA bid +35%
       </div>
     </div>`;
 
-  // abandonment risk factor bars
+  renderMLCharts();
+}
+
+/* ── ML CHART.JS CHARTS ─────────────────────────────────────────────────── */
+function renderMLCharts() {
+  const propensity = ml.purchasePropensity;
+  const ltv        = ml.ltvPrediction;
+  const aband      = ml.cartAbandonment;
+  const chartDefaults = { animation: false, plugins: { legend: { labels: { font: { size: 11 }, boxWidth: 12 } } } };
+
+  // ── ROC CURVE — real points from train_models.py scikit-learn output ──
+  function zipRoc(pts) {
+    return pts.fpr.map((f, i) => ({ x: f, y: pts.tpr[i] }));
+  }
+  new Chart(document.getElementById("rocChart"), {
+    type: "scatter",
+    data: {
+      datasets: [
+        { label: `Purchase Propensity (AUC ${propensity.auc} · CV ${propensity.cvAuc}±${propensity.cvAucStd})`, data: zipRoc(propensity.rocPoints), showLine:true, fill:false, borderColor:"#059669", backgroundColor:"#05966920", pointRadius:1, tension:0.2 },
+        { label: `Cart Abandonment (AUC ${aband.auc} · CV ${aband.cvAuc}±${aband.cvAucStd})`,                   data: zipRoc(aband.rocPoints),      showLine:true, fill:false, borderColor:"#DC2626", backgroundColor:"#DC262620", pointRadius:1, tension:0.2 },
+        { label: "Random baseline",                              data: [{x:0,y:0},{x:1,y:1}],    showLine:true, fill:false, borderColor:"#94A3B8", borderDash:[5,5], pointRadius:0 }
+      ]
+    },
+    options: { ...chartDefaults, scales: {
+      x: { min:0, max:1, title:{ display:true, text:"False Positive Rate", font:{size:10} } },
+      y: { min:0, max:1, title:{ display:true, text:"True Positive Rate",  font:{size:10} } }
+    }}
+  });
+
+  // ── PROPENSITY SEGMENTS ────────────────────────────────────────────────
+  const segs = propensity.segments;
+  new Chart(document.getElementById("propensityChart"), {
+    type: "bar",
+    data: {
+      labels: segs.map(s => s.label.split(":")[0]),
+      datasets: [{
+        label: "Propensity Score",
+        data:  segs.map(s => s.score),
+        backgroundColor: segs.map(s => s.color + "CC"),
+        borderColor:     segs.map(s => s.color),
+        borderWidth: 1.5
+      },{
+        label: "Segment Size (k users)",
+        data:  segs.map(s => +(s.size/1000).toFixed(1)),
+        type:  "line",
+        yAxisID: "y1",
+        borderColor: "#7C3AED",
+        backgroundColor: "#7C3AED22",
+        pointRadius: 4,
+        tension: 0.3
+      }]
+    },
+    options: { ...chartDefaults,
+      scales: {
+        y:  { min:0, max:1, title:{ display:true, text:"Propensity Score", font:{size:10} } },
+        y1: { position:"right", title:{ display:true, text:"Users (k)", font:{size:10} }, grid:{drawOnChartArea:false} }
+      }
+    }
+  });
+
+  // ── LTV TIERS ──────────────────────────────────────────────────────────
+  const tierColors = ["#7C3AED","#D97706","#64748B","#92400E"];
+  new Chart(document.getElementById("ltvChart"), {
+    type: "bar",
+    data: {
+      labels: ltv.tiers.map(t => t.tier),
+      datasets: [
+        { label: "Avg LTV ($)", data: ltv.tiers.map(t => t.avgLtv), backgroundColor: tierColors.map(c => c+"BB"), borderColor: tierColors, borderWidth:1.5, yAxisID:"y" },
+        { label: "Customers",   data: ltv.tiers.map(t => t.users),  type:"line", borderColor:"#2563EB", backgroundColor:"#2563EB22", pointRadius:5, tension:0.2, yAxisID:"y1" }
+      ]
+    },
+    options: { ...chartDefaults,
+      scales: {
+        y:  { title:{ display:true, text:"Avg LTV ($)", font:{size:10} } },
+        y1: { position:"right", title:{ display:true, text:"Customers", font:{size:10} }, grid:{drawOnChartArea:false} }
+      }
+    }
+  });
+
+  // ── FEATURE IMPORTANCE ─────────────────────────────────────────────────
   const factors = aband.topRiskFactors;
-  el("abandonmentBars").innerHTML = factors.map(f => `
-    <div class="bar-row">
-      <span class="bar-label">${f.factor}</span>
-      <div class="track"><div class="fill" style="--w:${Math.round(f.importance*100)}%;background:var(--red)"></div></div>
-      <span class="bar-value">${(f.importance*100).toFixed(0)}%</span>
-    </div>`).join("");
+  new Chart(document.getElementById("featImportanceChart"), {
+    type: "bar",
+    data: {
+      labels: factors.map(f => f.factor),
+      datasets:[{
+        label: "Importance",
+        data: factors.map(f => +(f.importance*100).toFixed(1)),
+        backgroundColor: ["#DC2626BB","#F97316BB","#EAB308BB","#22C55EBB","#3B82F6BB","#8B5CF6BB"],
+        borderColor:     ["#DC2626","#F97316","#EAB308","#22C55E","#3B82F6","#8B5CF6"],
+        borderWidth: 1.5
+      }]
+    },
+    options: { ...chartDefaults,
+      indexAxis: "y",
+      scales: {
+        x: { title:{ display:true, text:"Importance (%)", font:{size:10} } }
+      },
+      plugins: { ...chartDefaults.plugins, legend:{ display:false } }
+    }
+  });
+}
+
+/* ── AUDIENCE INTELLIGENCE (tabbed) ────────────────────────────────────── */
+function renderAudience() {
+  const tabs = document.querySelectorAll("#audienceTabs .gtm-tab");
+  tabs.forEach(btn => btn.addEventListener("click", () => {
+    tabs.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderAudienceTab(btn.dataset.aud);
+  }));
+  renderAudienceTab("sources");
+}
+
+function renderAudienceTab(tab) {
+  const c = document.getElementById("audienceContent");
+  if (tab === "sources") {
+    c.innerHTML = `
+      <div class="grid-three" style="margin-top:16px">
+        <div><p class="eyebrow" style="margin-bottom:8px">Traffic Sources</p><div class="rank-list" id="sourceList2"></div></div>
+        <div><p class="eyebrow" style="margin-bottom:8px">Channels (Medium)</p><div class="bars compact" id="mediumBars2"></div></div>
+        <div><p class="eyebrow" style="margin-bottom:8px">Browsers</p><div class="bars compact" id="browserBars2"></div></div>
+      </div>`;
+    renderRankList("sourceList2",  data.sourceCounts, 7);
+    renderBars("mediumBars2",  data.mediumCounts, 6);
+    renderBars("browserBars2", data.browserCounts, 6);
+  } else if (tab === "devices") {
+    const total = data.deviceConversion ? data.deviceConversion.reduce((s,d) => s+d.revenue, 0) : 1;
+    c.innerHTML = `
+      <div style="margin-top:16px">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Desktop converts at 3× mobile rate across 3 years of data.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Device</th><th>Sessions</th><th>Purchases</th><th>CVR</th><th>Revenue</th><th>Revenue Share</th></tr></thead>
+            <tbody>${(data.deviceConversion||[]).map(d => `
+              <tr>
+                <td><strong>${d.device}</strong></td>
+                <td>${n(d.sessions)}</td>
+                <td>${n(d.purchases)}</td>
+                <td><strong>${fmtP(d.cr)}</strong></td>
+                <td>${m(d.revenue)}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="flex:1;height:8px;background:var(--bg2);border-radius:999px;overflow:hidden">
+                      <div style="width:${Math.round(d.revenue/total*100)}%;height:100%;background:var(--teal);border-radius:999px"></div>
+                    </div>
+                    <span style="font-size:12px;color:var(--muted)">${Math.round(d.revenue/total*100)}%</span>
+                  </div>
+                </td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  } else {
+    c.innerHTML = `
+      <div class="grid-three" style="margin-top:16px">
+        <div><p class="eyebrow" style="margin-bottom:8px">Top Countries</p><div class="rank-list" id="countryList2"></div></div>
+        <div><p class="eyebrow" style="margin-bottom:8px">Top Pages</p><div class="rank-list" id="pageList2"></div></div>
+        <div></div>
+      </div>`;
+    renderRankList("countryList2", data.countryCounts, 7);
+    renderRankList("pageList2",    data.pageCounts,    7);
+  }
+}
+
+/* ── EXCEL EXPORT (SheetJS) ─────────────────────────────────────────────── */
+function downloadExcel() {
+  if (typeof XLSX === "undefined") { alert("SheetJS not loaded — check your internet connection."); return; }
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1 — Transactions
+  const txRows = txData.modeledTransactions.map(r => ({
+    transaction_id: r.transaction_id, date: r.date,
+    customer_type: r.customer_type, source: r.source, medium: r.medium,
+    device: r.device, country: r.country, items: r.items,
+    revenue: r.revenue, tax: r.tax, shipping: r.shipping,
+    ltv_tier: r.ltv_tier, propensity_score: r.propensity
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txRows), "Transactions");
+
+  // Sheet 2 — Event Summary
+  const evtRows = data.eventCounts.map(([name, count]) => ({ event_name: name, event_count: count }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(evtRows), "Event Summary");
+
+  // Sheet 3 — Monthly Revenue
+  const revRows = data.monthlyRevenue.map(m => ({
+    month: m.month, revenue: m.revenue, sessions: m.sessions,
+    transactions: m.transactions, year: m.year
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(revRows), "Monthly Revenue");
+
+  // Sheet 4 — ML Model Results
+  const mlRows = [
+    { model: "Purchase Propensity", algorithm: ml.purchasePropensity.modelType, metric: "AUC", value: ml.purchasePropensity.auc, precision: ml.purchasePropensity.precision, recall: ml.purchasePropensity.recall, f1: ml.purchasePropensity.f1, training_rows: ml.purchasePropensity.trainingRows },
+    { model: "LTV Prediction",      algorithm: ml.ltvPrediction.modelType,      metric: "R²",  value: ml.ltvPrediction.r2,       precision: "", recall: "", f1: "", training_rows: ml.ltvPrediction.trainingRows },
+    { model: "Cart Abandonment",    algorithm: ml.cartAbandonment.modelType,     metric: "AUC", value: ml.cartAbandonment.auc,    precision: "", recall: "", f1: "", training_rows: ml.purchasePropensity.trainingRows },
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mlRows), "ML Models");
+
+  // Sheet 5 — LTV Tiers
+  const ltvRows = ml.ltvPrediction.tiers.map(t => ({
+    tier: t.tier, criteria: t.criteria, customers: t.users, avg_ltv_usd: t.avgLtv, pct_retained: t.pct
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ltvRows), "LTV Tiers");
+
+  // Sheet 6 — BigQuery Cost Comparison
+  const bqRows = (bq.costComparison||[]).map(r => ({
+    mode: r.mode, cost_pct: r.costPct, billable_bytes: r.billableBytes, sla: r.sla, use_case: r.useCase
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bqRows), "BQ Cost");
+
+  XLSX.writeFile(wb, "GA4_Intelligence_Hub_Data.xlsx");
 }
 
 /* ── DEVICE CONVERSION TABLE ────────────────────────────────────────────── */
@@ -729,23 +933,16 @@ function init() {
   renderJourney();
   renderDayGrid();
   renderFunnel();
-  renderBars("eventBars",   data.eventCounts,  10);
-  renderBars("browserBars", data.browserCounts, 6);
-  renderBars("mediumBars",  data.mediumCounts,  6);
-  renderRankList("sourceList",  data.sourceCounts,  7);
-  renderRankList("countryList", data.countryCounts, 7);
-  renderRankList("pageList",    data.pageCounts,    7);
+  renderBars("eventBars", data.eventCounts, 10);
   renderGTM();
   renderBigQuery();
   renderML();
-  renderDeviceConversion();
+  renderAudience();
   renderTrackingPlan();
   renderTransactions();
-  renderInsights();
   renderTable();
   renderGA4Setup();
   renderBestPractices();
-  renderNetlify();
   initScrollSpy();
 
   el("eventSearch").addEventListener("input", e => renderTable(e.target.value));

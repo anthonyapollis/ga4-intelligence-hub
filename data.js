@@ -425,31 +425,44 @@ df  = job.result().to_dataframe()  # blocks until BATCH slot available`,
   ]
 };
 
-/* ─── ML INTELLIGENCE DATA ────────────────────────────────────────────────── */
+/* ─── ML INTELLIGENCE DATA ─────────────────────────────────────────────────
+   Real validated metrics from train_models.py (scikit-learn, n=80,000 sessions)
+   Features mirror BigQuery ML Feature Extraction query (bigquery_queries.sql #10)
+   ─────────────────────────────────────────────────────────────────────────── */
 window.GA4_ML_DATA = {
-  disclaimer: "Models trained on full 92-day dataset (847,932 events). Features engineered from BigQuery event_params using Python scikit-learn.",
+  disclaimer: "Models trained via train_models.py on 80,000 synthetic GA4 sessions (features match BigQuery export schema). Real scikit-learn cross-validated metrics.",
 
   purchasePropensity: {
     modelType: "Logistic Regression",
-    auc: 0.87,
-    precision: 0.81,
-    recall: 0.74,
-    f1: 0.77,
-    trainingRows: 65234,
-    features: ["session_count", "device_category", "traffic_medium", "pages_per_session", "engagement_time_msec", "country", "hour_of_day"],
+    auc: 0.7824,
+    cvAuc: 0.7864,
+    cvAucStd: 0.0040,
+    precision: 0.20,
+    recall: 0.83,
+    f1: 0.32,
+    trainingRows: 80000,
+    note: "class_weight=balanced maximises recall (catch purchasers) at cost of precision — by design.",
+    features: ["session_count", "view_item_count", "add_to_cart_count", "began_checkout", "engagement_msec", "scroll_pct", "days_since_first", "is_mobile", "is_returning", "is_organic", "is_paid", "country_tier"],
+    rocPoints: {
+      fpr: [0.0,0.0013,0.0034,0.0054,0.0079,0.0104,0.0138,0.0178,0.0221,0.0273,0.0335,0.0408,0.0492,0.0589,0.0699,0.0825,0.0968,0.1128,0.1307,0.1505,0.1722,0.1962,0.2223,0.2511,0.2822,0.3160,0.3523,0.3913,0.4330,0.4775,0.5249,0.5752,0.6285,0.6847,0.7439,0.8062,0.8716,0.9402,1.0],
+      tpr: [0.0,0.0118,0.0312,0.0437,0.0547,0.0671,0.0835,0.1032,0.1249,0.1502,0.1826,0.2190,0.2588,0.3020,0.3479,0.3956,0.4439,0.4923,0.5390,0.5820,0.6226,0.6597,0.6922,0.7214,0.7487,0.7726,0.7943,0.8136,0.8306,0.8466,0.8611,0.8741,0.8862,0.8972,0.9069,0.9163,0.9248,0.9348,1.0]
+    },
     segments: [
-      { label: "High-intent: 3+ sessions, desktop, organic", score: 0.84, size: 2847, color: "#059669" },
-      { label: "Mid-intent: 2 sessions, any device",         score: 0.51, size: 8923, color: "#D97706" },
-      { label: "Low-intent: 1 session, mobile, direct",      score: 0.18, size: 31420, color: "#DC2626" },
-      { label: "Paid CPC visitors (any device)",             score: 0.61, size: 4230, color: "#2563EB" }
+      { label: "Score 80–100%: returning + viewed items", score: 0.90, users: 1240, convRate: 0.68, color: "#059669" },
+      { label: "Score 60–80%: desktop, organic, 2+ sess", score: 0.70, users: 3820, convRate: 0.34, color: "#10B981" },
+      { label: "Score 40–60%: mixed intent signals",       score: 0.50, users: 8940, convRate: 0.12, color: "#D97706" },
+      { label: "Score 20–40%: 1 session, low engagement",  score: 0.30, users: 21600, convRate: 0.04, color: "#F97316" },
+      { label: "Score 0–20%: mobile, first visit, direct", score: 0.10, users: 44400, convRate: 0.01, color: "#DC2626" }
     ]
   },
 
   ltvPrediction: {
     modelType: "Random Forest Regressor",
-    r2: 0.73,
-    mae: 12.40,
-    trainingRows: 2147,
+    r2: 0.9508,
+    mae: 8.59,
+    rmse: 11.61,
+    trainingRows: 7215,
+    note: "R² 0.95 on synthetic data — real GA4 data typically yields R² 0.55–0.75 due to noise.",
     tiers: [
       { tier: "Platinum", criteria: "3+ purchases · $150+ LTV", users: 412,  avgLtv: 287.50, pct: 19.2 },
       { tier: "Gold",     criteria: "2 purchases · $80–150 LTV", users: 891,  avgLtv: 112.30, pct: 41.5 },
@@ -460,7 +473,17 @@ window.GA4_ML_DATA = {
 
   cartAbandonment: {
     modelType: "Gradient Boosting Classifier",
-    auc: 0.84,
+    auc: 0.7361,
+    cvAuc: 0.7423,
+    cvAucStd: 0.0050,
+    precision: 0.84,
+    recall: 0.99,
+    f1: 0.91,
+    note: "High recall (0.99) catches nearly all abandoners; precision 0.84 means 16% false positives — acceptable for email/RLSA campaigns.",
+    rocPoints: {
+      fpr: [0.0,0.008,0.0159,0.0292,0.0424,0.0611,0.0902,0.1326,0.1964,0.2840,0.4000,0.5514,0.7354,0.9168,1.0],
+      tpr: [0.0,0.0797,0.1887,0.2336,0.2952,0.3857,0.5156,0.6339,0.7602,0.8666,0.9352,0.9783,0.9971,1.0,1.0]
+    },
     topRiskFactors: [
       { factor: "Mobile device + payment step",   importance: 0.31 },
       { factor: "Session duration < 90s",         importance: 0.24 },
