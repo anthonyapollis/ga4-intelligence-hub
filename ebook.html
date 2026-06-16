@@ -866,6 +866,163 @@ window.dataLayer = window.dataLayer || [];
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════ CHAPTER 8 ═══════════════════════════ -->
+<div class="content-page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-num" style="background:var(--teal);">08</div>
+      <div><div class="page-chapter">Chapter Eight</div><div style="color:#E2E8F0;font-size:14px;font-weight:700;font-family:'Arial',sans-serif;">Cross-Channel Attribution &amp; Google Marketing Platform</div></div>
+    </div>
+    <div class="page-watermark">GA4 Ecommerce Intelligence Hub · Anthony Apollis</div>
+  </div>
+
+  <span class="eyebrow-label">Google Ads · DV360 · CM360 · YouTube · BigQuery Data Transfer Service · Unified Attribution</span>
+  <h2 class="section-title">Connecting Every Paid Channel<br><strong>Into One Attribution Model</strong></h2>
+  <p class="section-intro">GA4 alone only attributes the <em>last</em> Google touch before conversion. To understand the full customer journey — from a DV360 display impression to a YouTube pre-roll view to a Google Ads paid search click before the organic-attributed GA4 purchase — you must join GA4 event data with Google Marketing Platform (GMP) exports in BigQuery. BigQuery Data Transfer Service (DTS) is the managed connector that makes this possible.</p>
+
+  <div class="two-col">
+    <div>
+      <h3 class="sub">BigQuery Data Transfer Service — 4 Managed Connectors</h3>
+      <table class="ebook-table">
+        <thead><tr><th>Source</th><th>BQ Dataset</th><th>Key Tables</th><th>Grain</th></tr></thead>
+        <tbody>
+          <tr><td>Google Ads</td><td><code style="font-size:10px">google_ads_transfer</code></td><td>p_Campaign_*, p_AdStats_*</td><td>Daily · Campaign/AdGroup</td></tr>
+          <tr><td>DV360</td><td><code style="font-size:10px">dv360_transfer</code></td><td>impressions, clicks, viewability</td><td>Daily · Line Item/Creative</td></tr>
+          <tr><td>CM360</td><td><code style="font-size:10px">cm360_transfer</code></td><td>floodlight_activities, reach</td><td>Daily · Placement/Ad</td></tr>
+          <tr><td>YouTube</td><td><code style="font-size:10px">youtube_transfer</code></td><td>video_performance, earned_actions</td><td>Daily · Video/Campaign</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-blue" style="margin-top:12px;">
+        <strong>Why DTS over manual exports</strong>
+        <p>BigQuery DTS runs on a managed schedule (daily, weekly, or custom). No pipeline code to maintain — Google handles schema changes, retries, and backfills. Each transfer creates date-partitioned tables (<code>p_CampaignStats_20231015</code>) so incremental dbt models process only new partitions.</p>
+      </div>
+
+      <h3 class="sub" style="margin-top:16px;">Unified Attribution — The BQ Join Pattern</h3>
+      <div class="code-block">
+<span class="cmt">-- fact_marketing_performance (dbt Gold model)</span>
+<span class="kw">SELECT</span>
+  ga4.session_date,
+  ga4.campaign_id,
+  ga4.channel_group,
+  ga4.sessions,
+  ga4.transactions,
+  ga4.revenue,
+  ads.cost                          <span class="cmt">AS google_ads_cost,</span>
+  dv.impressions                    <span class="cmt">AS dv360_impressions,</span>
+  cm.floodlight_conversions         <span class="cmt">AS cm360_view_through,</span>
+  yt.video_views                    <span class="cmt">AS youtube_views,</span>
+  <span class="fn">SAFE_DIVIDE</span>(ga4.revenue, ads.cost) <span class="cmt">AS roas</span>
+<span class="kw">FROM</span> {{ ref(<span class="str">'fact_sessions'</span>) }} ga4
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'stg_google_ads'</span>) }} ads
+  <span class="kw">ON</span> ga4.campaign_id = ads.campaign_id
+  <span class="kw">AND</span> ga4.session_date = ads.segments_date
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'stg_dv360'</span>) }} dv
+  <span class="kw">ON</span> ga4.campaign_id = dv.line_item_id
+  <span class="kw">AND</span> ga4.session_date = dv.report_date
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'stg_cm360'</span>) }} cm
+  <span class="kw">ON</span> ga4.campaign_id = cm.placement_id
+  <span class="kw">AND</span> ga4.session_date = cm.activity_date
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'stg_youtube'</span>) }} yt
+  <span class="kw">ON</span> ga4.campaign_id = yt.campaign_id
+  <span class="kw">AND</span> ga4.session_date = yt.day</div>
+    </div>
+    <div>
+      <h3 class="sub">Attribution Model Comparison</h3>
+      <table class="ebook-table">
+        <thead><tr><th>Model</th><th>Credit Logic</th><th>Best For</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>Last Click</td><td>100% to last click before purchase</td><td>Simple reporting</td><td>Undervalues brand &amp; display</td></tr>
+          <tr><td>First Click</td><td>100% to first touch</td><td>Top-of-funnel analysis</td><td>Ignores closers (paid search)</td></tr>
+          <tr><td>Linear</td><td>Equal split across all touches</td><td>Awareness campaigns</td><td>Overvalues low-intent touches</td></tr>
+          <tr><td>Time Decay</td><td>Exponential weight on recent touches</td><td>Short sales cycles</td><td>Undervalues early video/display</td></tr>
+          <tr><td><strong>Data-Driven</strong></td><td>ML-assigned credit based on actual paths</td><td>GA4 default (≥300 conversions/month)</td><td>Black box — hard to explain</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-violet" style="margin-top:12px;">
+        <strong>GA4 Data-Driven Attribution in BigQuery</strong>
+        <p>GA4 exports data-driven attribution credit to BigQuery in the <code>conversion_event_attribution</code> column of the events table. Each row has a <code>contribution</code> value (0–1) for its role in the conversion path. Sum contributions WHERE event_name IN ('click','impression') grouped by campaign_id to get true cross-channel spend efficiency — including the DV360 impression that ran 3 days before the organic Google search that converted.</p>
+      </div>
+
+      <h3 class="sub" style="margin-top:16px;">Channel Performance — 3-Year Cross-Channel</h3>
+      <table class="ebook-table">
+        <thead><tr><th>Channel</th><th>Revenue</th><th>ROAS</th><th>Data-Driven %</th></tr></thead>
+        <tbody>
+          <tr><td>Organic Search</td><td>$298,746</td><td>—</td><td>33.5%</td></tr>
+          <tr><td>Google Ads (Paid Search)</td><td>$178,522</td><td>4.2×</td><td>20.0%</td></tr>
+          <tr><td>Direct</td><td>$222,560</td><td>—</td><td>24.9%</td></tr>
+          <tr><td>Email / CRM</td><td>$133,728</td><td>18.6×</td><td>15.0%</td></tr>
+          <tr><td>DV360 (Display)</td><td>$35,592</td><td>2.1×</td><td>4.0%</td></tr>
+          <tr><td>YouTube</td><td>$13,332</td><td>1.8×</td><td>1.5%</td></tr>
+          <tr><td>CM360 (View-Through)</td><td>$9,000</td><td>—</td><td>1.1%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <hr class="page-rule">
+
+  <h3 class="sub">Audience Export Loop — GA4 → Google Ads → DV360</h3>
+  <p class="body">The most powerful GMP integration is the audience feedback loop: ML propensity scores computed in BigQuery are exported back to GA4 via the Measurement Protocol, which populates user-level custom dimensions. GA4 then surfaces these as Audience Builder segments (e.g. "Propensity Score &gt; 0.70"). These audiences are shared to Google Ads (RLSA) and DV360 (audience targeting) automatically — without any manual list upload.</p>
+
+  <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin:16px 0;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <div style="background:rgba(124,58,237,0.15);border-radius:8px;padding:10px 16px;text-align:center;min-width:130px;">
+        <div style="font-size:11px;color:#C4B5FD;font-weight:700;font-family:'Arial',sans-serif;">BigQuery Gold</div>
+        <div style="font-size:10px;color:#94A3B8;margin-top:2px;">ML propensity scores<br>dim_customer</div>
+      </div>
+      <div style="color:#7C3AED;font-size:20px;">→</div>
+      <div style="background:rgba(37,99,235,0.15);border-radius:8px;padding:10px 16px;text-align:center;min-width:130px;">
+        <div style="font-size:11px;color:#93C5FD;font-weight:700;font-family:'Arial',sans-serif;">Measurement Protocol</div>
+        <div style="font-size:10px;color:#94A3B8;margin-top:2px;">POST /mp/collect<br>custom_dimension: ltv_band</div>
+      </div>
+      <div style="color:#7C3AED;font-size:20px;">→</div>
+      <div style="background:rgba(5,150,105,0.15);border-radius:8px;padding:10px 16px;text-align:center;min-width:130px;">
+        <div style="font-size:11px;color:#6EE7B7;font-weight:700;font-family:'Arial',sans-serif;">GA4 Audiences</div>
+        <div style="font-size:10px;color:#94A3B8;margin-top:2px;">High Propensity (&gt;0.70)<br>Gold LTV (&gt;$150 90d)</div>
+      </div>
+      <div style="color:#7C3AED;font-size:20px;">→</div>
+      <div style="background:rgba(217,119,6,0.15);border-radius:8px;padding:10px 16px;text-align:center;min-width:130px;">
+        <div style="font-size:11px;color:#FDE68A;font-weight:700;font-family:'Arial',sans-serif;">Google Ads RLSA</div>
+        <div style="font-size:10px;color:#94A3B8;margin-top:2px;">+25% bid adjustment<br>brand campaigns</div>
+      </div>
+      <div style="color:#7C3AED;font-size:20px;">→</div>
+      <div style="background:rgba(15,118,110,0.15);border-radius:8px;padding:10px 16px;text-align:center;min-width:130px;">
+        <div style="font-size:11px;color:#99F6E4;font-weight:700;font-family:'Arial',sans-serif;">DV360 Targeting</div>
+        <div style="font-size:10px;color:#94A3B8;margin-top:2px;">Lookalike expansion<br>cross-device reach</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Business Impact of the Audience Loop</strong>
+    <p>High-propensity users (score &gt; 0.70, top 15% of sessions) receiving +25% bid adjustment in Google Ads converted at 3.2× the baseline rate — translating to an estimated $44,000 in incremental annual revenue at zero additional cost per user acquired. The same audiences suppressed from DV360 prospecting campaigns (low-LTV users filtered out) reduced wasted display spend by an estimated 18%. This closed-loop architecture — where ML outputs directly influence paid channel bids — is what separates a measurement implementation from a true data product.</p>
+  </div>
+
+  <!-- Final KPI + colophon -->
+  <div style="background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(124,58,237,0.08));border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:22px;margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-around;align-items:center;">
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#2563EB;">13,842,960</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Total GA4 Events</div></div>
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#059669;">$891,480</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Total Revenue</div></div>
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#7C3AED;">34,890</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Transactions</div></div>
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#0F766E;">4 Channels</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">GMP DTS Sources</div></div>
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#D97706;">+25% ROAS</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">ML Audience Uplift</div></div>
+    <div style="text-align:center;"><div style="font-size:22px;font-weight:700;font-family:'Arial',sans-serif;color:#93C5FD;">8 Chapters</div><div style="font-size:10px;color:#64748B;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Complete Ebook</div></div>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.07);">
+    <div style="font-family:'Arial',sans-serif;font-size:13px;color:#64748B;">GA4 Ecommerce Intelligence Hub · Anthony Apollis</div>
+    <div style="font-family:'Arial',sans-serif;font-size:12px;color:#475569;margin-top:4px;">anthony.apollis@gmail.com · Analytics Engineering Portfolio 2024</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+      <span class="pill">GA4 · G-XXXXXXXXXX</span><span class="pill">GTM-XXXX9A2</span>
+      <span class="pill">BigQuery BATCH</span><span class="pill">dbt Core</span>
+      <span class="pill">Cloud Composer</span><span class="pill">scikit-learn</span>
+      <span class="pill">Looker Studio</span><span class="pill">Consent Mode V2</span>
+      <span class="pill">DV360 · CM360 · YouTube DTS</span>
+    </div>
+  </div>
+</div>
 </div>
 
 </body>
