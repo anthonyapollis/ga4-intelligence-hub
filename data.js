@@ -813,5 +813,194 @@ print(resp.status_code)  # 204 = success`,
     { step: "4", action: "Open GA4 DebugView",      detail: "Admin → DebugView. Events appear within seconds for debug_mode=1 sessions.", tool: "GA4 DebugView" },
     { step: "5", action: "Check event parameters",  detail: "Click each event in DebugView to see all params. Confirm currency, value, transaction_id.", tool: "GA4 DebugView" },
     { step: "6", action: "Validate in BigQuery",    detail: "Run query on events_intraday_YYYYMMDD within 1 hr. Confirm clean_event='gtm.js'.", tool: "BigQuery" }
-  ]
+  ],
+
+  /* ── DIRTY DATA SAMPLES ─────────────────────────────────────────────────── */
+  dirtyDataSamples: [
+    { row:1,  event_date:"2021-01-31", event_name:"page_view",   transaction_id:null,      revenue:null,       currency:null,    user_id:"1026454.4271", issue:"NULL event_params — no ecommerce object attached" },
+    { row:2,  event_date:"31/01/2021", event_name:"purchase",    transaction_id:"T-38291", revenue:"$25.50",   currency:"USD",   user_id:"1029692.9551", issue:"DD/MM/YYYY date format; revenue is string not float" },
+    { row:3,  event_date:"2021-01-31", event_name:"purchase",    transaction_id:"T-38291", revenue:25.50,      currency:"USD",   user_id:"1029692.9551", issue:"DUPLICATE transaction_id T-38291 (rows 2 and 3)" },
+    { row:4,  event_date:"2021-01-31", event_name:"AddToCart",   transaction_id:null,      revenue:null,       currency:null,    user_id:"1031480.8260", issue:"Wrong event name: 'AddToCart' should be 'add_to_cart'" },
+    { row:5,  event_date:"2021-01-31", event_name:"purchase",    transaction_id:"T-38292", revenue:"€18.99",   currency:"EUR",   user_id:"1034924.6134", issue:"Mixed currency symbol in revenue string; EUR vs USD" },
+    { row:6,  event_date:null,         event_name:"session_start",transaction_id:null,     revenue:null,       currency:null,    user_id:"1037360.4939", issue:"NULL event_date — BQ export timestamp gap" },
+    { row:7,  event_date:"2021-02-15", event_name:"purchase",    transaction_id:"T-38293", revenue:null,       currency:"USD",   user_id:"1040512.1234", issue:"NULL revenue on completed purchase" },
+    { row:8,  event_date:"2021-02-15", event_name:"begin_checkout",transaction_id:"",     revenue:0,          currency:"",      user_id:"",             issue:"Empty string user_id and currency — encoding error" },
+    { row:9,  event_date:"20210315",   event_name:"view_item",   transaction_id:null,      revenue:null,       currency:null,    user_id:"1042381.7743", issue:"Date as YYYYMMDD integer format instead of YYYY-MM-DD string" },
+    { row:10, event_date:"2021-03-15", event_name:"purchase",    transaction_id:"T-38294", revenue:"25,99",    currency:"USD",   user_id:"1044162.5555", issue:"Comma decimal separator (European format) instead of period" }
+  ],
+
+  /* ── CLEAN DATA (dbt staging model output) ──────────────────────────────── */
+  cleanDataSamples: [
+    { row:1,  event_date:"2021-01-31", event_name:"page_view",    transaction_id:null,      revenue:null,  currency:null,  user_id:"1026454.4271", fix:"COALESCE(ecommerce_object, NULL) — no action needed" },
+    { row:2,  event_date:"2021-01-31", event_name:"purchase",     transaction_id:"T-38291", revenue:25.50, currency:"USD", user_id:"1029692.9551", fix:"PARSE_DATE('%d/%m/%Y', event_date); SAFE_CAST(revenue AS FLOAT64)" },
+    { row:3,  event_date:"2021-01-31", event_name:"purchase",     transaction_id:"T-38291", revenue:25.50, currency:"USD", user_id:"1029692.9551", fix:"QUALIFY ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY event_timestamp DESC) = 1" },
+    { row:4,  event_date:"2021-01-31", event_name:"add_to_cart",  transaction_id:null,      revenue:null,  currency:null,  user_id:"1031480.8260", fix:"LOWER(TRIM(event_name)) with accepted_values dbt test" },
+    { row:5,  event_date:"2021-01-31", event_name:"purchase",     transaction_id:"T-38292", revenue:18.99, currency:"EUR", user_id:"1034924.6134", fix:"REGEXP_REPLACE(revenue, r'[^0-9.]', ''); SAFE_CAST AS FLOAT64" },
+    { row:6,  event_date:"2021-01-31", event_name:"session_start",transaction_id:null,      revenue:null,  currency:null,  user_id:"1037360.4939", fix:"COALESCE(event_date, DATE(TIMESTAMP_MICROS(event_timestamp)))" },
+    { row:7,  event_date:"2021-02-15", event_name:"purchase",     transaction_id:"T-38293", revenue:null,  currency:"USD", user_id:"1040512.1234", fix:"not_null dbt test flags row; COALESCE(revenue, 0.0) with warning" },
+    { row:8,  event_date:"2021-02-15", event_name:"begin_checkout",transaction_id:null,     revenue:0,     currency:"USD", user_id:null,           fix:"NULLIF(user_id,'') and NULLIF(currency,''); fill currency from property config" },
+    { row:9,  event_date:"2021-03-15", event_name:"view_item",    transaction_id:null,      revenue:null,  currency:null,  user_id:"1042381.7743", fix:"PARSE_DATE('%Y%m%d', CAST(event_date AS STRING))" },
+    { row:10, event_date:"2021-03-15", event_name:"purchase",     transaction_id:"T-38294", revenue:25.99, currency:"USD", user_id:"1044162.5555", fix:"REPLACE(revenue_str, ',', '.'); SAFE_CAST(revenue AS FLOAT64)" }
+  ],
+
+  /* ── dbt MODEL REFERENCE ────────────────────────────────────────────────── */
+  dbtModels: [
+    { name:"stg_ga4_events",        type:"staging", materialization:"view",  description:"Flatten raw GA4 events; parse event_params; cast all types",              key_cols:"event_date, event_name, user_pseudo_id, ga_session_id",          tests:"not_null(event_date), not_null(user_pseudo_id), accepted_values(event_name)", row_estimate:"13.8M" },
+    { name:"stg_ga4_ecommerce",     type:"staging", materialization:"view",  description:"Extract UNNEST(items[]) from purchase/add_to_cart/view_item events",     key_cols:"transaction_id, item_id, quantity, price, currency",              tests:"not_null(transaction_id), not_null(item_id), unique(transaction_id+item_id)", row_estimate:"120K" },
+    { name:"stg_gtm_tags",          type:"staging", materialization:"view",  description:"Parse GTM container JSON; normalize tag/trigger/variable metadata",       key_cols:"tag_id, tag_type, trigger_id, fires_on",                         tests:"not_null(tag_id), unique(tag_id), relationships(trigger_id)", row_estimate:"9 tags" },
+    { name:"fact_orders",           type:"mart",    materialization:"table", description:"One row per transaction; join stg_events + stg_ecommerce; calc metrics",  key_cols:"transaction_id, order_date, revenue, tax, shipping, items_count", tests:"unique(transaction_id), not_null(revenue), dbt_utils.at_least_one", row_estimate:"34,890" },
+    { name:"fact_customer_ltv",     type:"mart",    materialization:"table", description:"Cumulative LTV per user_pseudo_id; rolling 90-day window",               key_cols:"user_pseudo_id, ltv_90d, ltv_180d, ltv_total, tier",             tests:"unique(user_pseudo_id), not_null(ltv_total), accepted_values(tier)", row_estimate:"743,800" },
+    { name:"fact_sessions",         type:"mart",    materialization:"table", description:"One row per session; attribution, device, geo, channel group",            key_cols:"ga_session_id, user_pseudo_id, session_start, channel_group",    tests:"unique(ga_session_id), not_null(channel_group), relationships(user_pseudo_id)", row_estimate:"1.89M" },
+    { name:"dim_products",          type:"mart",    materialization:"table", description:"Product master from items[]; deduplicated; price history",                 key_cols:"item_id, item_name, item_category, brand, price",                tests:"unique(item_id), not_null(item_name), accepted_values(item_category)", row_estimate:"25" },
+    { name:"ml_purchase_propensity",type:"ml",      materialization:"table", description:"Scikit-learn propensity scores written back from Python batch job",       key_cols:"user_pseudo_id, propensity_score, score_date, model_version",    tests:"not_null(propensity_score), dbt_expectations.expect_column_values_to_be_between(0,1)", row_estimate:"743,800" },
+    { name:"ml_ltv_regression",     type:"ml",      materialization:"table", description:"LTV regression predictions (R²=0.81) per user",                         key_cols:"user_pseudo_id, predicted_ltv, confidence_interval, tier",       tests:"not_null(predicted_ltv), accepted_values(tier)", row_estimate:"743,800" },
+    { name:"ml_churn_risk",         type:"ml",      materialization:"table", description:"Churn risk scores (AUC=0.78); 90-day no-purchase threshold",             key_cols:"user_pseudo_id, churn_score, days_since_purchase, risk_band",   tests:"not_null(churn_score), dbt_expectations.expect_column_values_to_be_between(0,1)", row_estimate:"743,800" }
+  ],
+
+  /* ── MASTER PRODUCTS ────────────────────────────────────────────────────── */
+  masterProducts: [
+    { product_id:"P001", product_name:"Google Unisex Eco Tee",         category:"Apparel",    brand:"Google",    price_usd:25.99, cost_usd:9.50,  margin_pct:63.4, sku:"GGOEGAAX0104", in_stock:"Y", weight_kg:0.25 },
+    { product_id:"P002", product_name:"Google Classic Tee Navy",       category:"Apparel",    brand:"Google",    price_usd:22.99, cost_usd:8.20,  margin_pct:64.3, sku:"GGOEGAAX0200", in_stock:"Y", weight_kg:0.22 },
+    { product_id:"P003", product_name:"Google Spiral Notebook",        category:"Office",     brand:"Google",    price_usd:12.99, cost_usd:3.80,  margin_pct:70.7, sku:"GGOEYAAX0108", in_stock:"Y", weight_kg:0.35 },
+    { product_id:"P004", product_name:"Google Stainless Steel Bottle", category:"Drinkware",  brand:"Google",    price_usd:24.99, cost_usd:10.20, margin_pct:59.2, sku:"GGOEGAXX0193", in_stock:"Y", weight_kg:0.55 },
+    { product_id:"P005", product_name:"YouTube Brand Hoodie",          category:"Apparel",    brand:"YouTube",   price_usd:49.99, cost_usd:18.50, margin_pct:63.0, sku:"YTBEGAAX0001", in_stock:"Y", weight_kg:0.65 },
+    { product_id:"P006", product_name:"Android Snapback Hat",          category:"Apparel",    brand:"Android",   price_usd:21.99, cost_usd:7.80,  margin_pct:64.5, sku:"ANDREGAAX0020", in_stock:"N", weight_kg:0.18 },
+    { product_id:"P007", product_name:"Google Maps Tote Bag",          category:"Bags",       brand:"Google",    price_usd:18.99, cost_usd:6.50,  margin_pct:65.8, sku:"GGOEGAXX0033", in_stock:"Y", weight_kg:0.30 },
+    { product_id:"P008", product_name:"Chrome Dino Enamel Pin",        category:"Accessories",brand:"Chrome",    price_usd:8.99,  cost_usd:2.20,  margin_pct:75.5, sku:"CHREGAAX0001", in_stock:"Y", weight_kg:0.05 },
+    { product_id:"P009", product_name:"Google Waze Plush Toy",         category:"Accessories",brand:"Waze",      price_usd:16.99, cost_usd:5.80,  margin_pct:65.8, sku:"WAZEGAAX0010", in_stock:"Y", weight_kg:0.20 },
+    { product_id:"P010", product_name:"Google Embroidered Cap",        category:"Apparel",    brand:"Google",    price_usd:20.99, cost_usd:7.40,  margin_pct:64.7, sku:"GGOEGAAX0310", in_stock:"Y", weight_kg:0.17 },
+    { product_id:"P011", product_name:"Cloud Platform Mug",            category:"Drinkware",  brand:"GCP",       price_usd:14.99, cost_usd:4.60,  margin_pct:69.3, sku:"GCPEGAXX0055", in_stock:"Y", weight_kg:0.45 },
+    { product_id:"P012", product_name:"Google Fleece Jacket",          category:"Apparel",    brand:"Google",    price_usd:74.99, cost_usd:28.00, margin_pct:62.7, sku:"GGOEGAAX0720", in_stock:"N", weight_kg:0.85 },
+    { product_id:"P013", product_name:"YouTube Music Beanie",          category:"Apparel",    brand:"YouTube",   price_usd:15.99, cost_usd:5.20,  margin_pct:67.5, sku:"YTMEGAAX0030", in_stock:"Y", weight_kg:0.12 },
+    { product_id:"P014", product_name:"Google Phone Stand",            category:"Office",     brand:"Google",    price_usd:19.99, cost_usd:7.10,  margin_pct:64.5, sku:"GGOEYAAX0225", in_stock:"Y", weight_kg:0.28 },
+    { product_id:"P015", product_name:"Pixel Buds Tote Bag",          category:"Bags",       brand:"Pixel",     price_usd:22.99, cost_usd:8.30,  margin_pct:63.9, sku:"PIXEGAXX0077", in_stock:"Y", weight_kg:0.28 },
+    { product_id:"P016", product_name:"Google Sport Duffel",          category:"Bags",       brand:"Google",    price_usd:39.99, cost_usd:15.00, margin_pct:62.5, sku:"GGOEGAXX0120", in_stock:"Y", weight_kg:0.90 },
+    { product_id:"P017", product_name:"Android Plush Toy",            category:"Accessories",brand:"Android",   price_usd:14.99, cost_usd:4.80,  margin_pct:68.0, sku:"ANDREGAAX0050", in_stock:"Y", weight_kg:0.22 },
+    { product_id:"P018", product_name:"Google Sunglasses",            category:"Accessories",brand:"Google",    price_usd:32.99, cost_usd:11.80, margin_pct:64.2, sku:"GGOEGAXX0288", in_stock:"N", weight_kg:0.08 },
+    { product_id:"P019", product_name:"BigQuery Sticker Pack",        category:"Office",     brand:"GCP",       price_usd:4.99,  cost_usd:0.95,  margin_pct:81.0, sku:"GCPEGAXX0009", in_stock:"Y", weight_kg:0.03 },
+    { product_id:"P020", product_name:"Google Leather Journal",       category:"Office",     brand:"Google",    price_usd:29.99, cost_usd:11.20, margin_pct:62.7, sku:"GGOEYAAX0350", in_stock:"Y", weight_kg:0.50 },
+    { product_id:"P021", product_name:"Chrome Enterprise Lanyard",    category:"Accessories",brand:"Chrome",    price_usd:7.99,  cost_usd:1.90,  margin_pct:76.2, sku:"CHREGAAX0022", in_stock:"Y", weight_kg:0.04 },
+    { product_id:"P022", product_name:"Google Polo Shirt White",      category:"Apparel",    brand:"Google",    price_usd:34.99, cost_usd:13.00, margin_pct:62.8, sku:"GGOEGAAX0440", in_stock:"Y", weight_kg:0.28 },
+    { product_id:"P023", product_name:"Workspace Blue Tumbler",       category:"Drinkware",  brand:"Workspace", price_usd:17.99, cost_usd:5.90,  margin_pct:67.2, sku:"WRKEGAXX0011", in_stock:"Y", weight_kg:0.40 },
+    { product_id:"P024", product_name:"Google Zip-Up Hoodie",         category:"Apparel",    brand:"Google",    price_usd:59.99, cost_usd:22.50, margin_pct:62.5, sku:"GGOEGAAX0810", in_stock:"Y", weight_kg:0.75 },
+    { product_id:"P025", product_name:"Google Pixel Watch Band",      category:"Accessories",brand:"Pixel",     price_usd:27.99, cost_usd:9.80,  margin_pct:65.0, sku:"PIXEGAXX0099", in_stock:"N", weight_kg:0.06 }
+  ],
+
+  /* ── MASTER CUSTOMERS ───────────────────────────────────────────────────── */
+  masterCustomers: [
+    { customer_id:"C001", email_hash:"5e884898da28047151d0e56f8dc62927", acquisition_channel:"organic",  first_purchase_date:"2021-01-15", ltv_band:"Gold",     total_orders:7,  total_spend:224.40, churn_risk:0.12, propensity:0.88, days_since_last:14  },
+    { customer_id:"C002", email_hash:"7c4a8d09ca3762af61e59520943dc264", acquisition_channel:"cpc",      first_purchase_date:"2021-02-03", ltv_band:"Silver",   total_orders:4,  total_spend:98.75,  churn_risk:0.34, propensity:0.61, days_since_last:42  },
+    { customer_id:"C003", email_hash:"6b86b273ff34fce19d6b804eff5a3f57", acquisition_channel:"email",    first_purchase_date:"2020-11-28", ltv_band:"Platinum", total_orders:14, total_spend:412.60, churn_risk:0.05, propensity:0.97, days_since_last:3   },
+    { customer_id:"C004", email_hash:"d4735e3a265e16eee03f59718b9b5d03", acquisition_channel:"referral", first_purchase_date:"2021-03-10", ltv_band:"Bronze",   total_orders:1,  total_spend:22.99,  churn_risk:0.78, propensity:0.22, days_since_last:187 },
+    { customer_id:"C005", email_hash:"ef2d127de37b942baad06145e54b0c61", acquisition_channel:"organic",  first_purchase_date:"2021-01-22", ltv_band:"Gold",     total_orders:8,  total_spend:267.50, churn_risk:0.19, propensity:0.82, days_since_last:21  },
+    { customer_id:"C006", email_hash:"e7f6c011776e8db7cd330b54174fd76f", acquisition_channel:"display",  first_purchase_date:"2022-04-14", ltv_band:"Bronze",   total_orders:2,  total_spend:45.98,  churn_risk:0.65, propensity:0.31, days_since_last:124 },
+    { customer_id:"C007", email_hash:"7902699be42c8a8e46fbebb4501726b7", acquisition_channel:"cpc",      first_purchase_date:"2022-06-01", ltv_band:"Silver",   total_orders:5,  total_spend:134.90, churn_risk:0.28, propensity:0.69, days_since_last:35  },
+    { customer_id:"C008", email_hash:"2c624232cdd221771294dfbb310acbc8", acquisition_channel:"organic",  first_purchase_date:"2020-12-05", ltv_band:"Platinum", total_orders:18, total_spend:589.20, churn_risk:0.03, propensity:0.98, days_since_last:5   },
+    { customer_id:"C009", email_hash:"19581e27de7ced00ff1ce50b2047e7a5", acquisition_channel:"email",    first_purchase_date:"2022-09-11", ltv_band:"Silver",   total_orders:3,  total_spend:76.45,  churn_risk:0.41, propensity:0.55, days_since_last:58  },
+    { customer_id:"C010", email_hash:"4a44dc15364204a80fe80e9039455cc1", acquisition_channel:"referral", first_purchase_date:"2023-01-08", ltv_band:"Bronze",   total_orders:1,  total_spend:15.99,  churn_risk:0.82, propensity:0.18, days_since_last:220 },
+    { customer_id:"C011", email_hash:"1b16ac8d2e0726b8c78df5975a01dad5", acquisition_channel:"organic",  first_purchase_date:"2021-05-19", ltv_band:"Gold",     total_orders:9,  total_spend:298.70, churn_risk:0.15, propensity:0.85, days_since_last:9   },
+    { customer_id:"C012", email_hash:"bd307a3ec329e10a2cff8fb87480823d", acquisition_channel:"cpc",      first_purchase_date:"2022-11-30", ltv_band:"Silver",   total_orders:4,  total_spend:112.50, churn_risk:0.32, propensity:0.64, days_since_last:47  },
+    { customer_id:"C013", email_hash:"97a6122842b0e21f34e69c9fce65f4aa", acquisition_channel:"organic",  first_purchase_date:"2020-11-15", ltv_band:"Platinum", total_orders:22, total_spend:678.40, churn_risk:0.02, propensity:0.99, days_since_last:2   },
+    { customer_id:"C014", email_hash:"3fdba35f04dc8c462986c992bcf87554", acquisition_channel:"email",    first_purchase_date:"2023-03-22", ltv_band:"Bronze",   total_orders:1,  total_spend:29.99,  churn_risk:0.74, propensity:0.26, days_since_last:148 },
+    { customer_id:"C015", email_hash:"c4ca4238a0b923820dcc509a6f75849b", acquisition_channel:"organic",  first_purchase_date:"2021-08-07", ltv_band:"Gold",     total_orders:6,  total_spend:189.30, churn_risk:0.22, propensity:0.76, days_since_last:28  },
+    { customer_id:"C016", email_hash:"c81e728d9d4c2f636f067f89cc14862c", acquisition_channel:"display",  first_purchase_date:"2022-07-17", ltv_band:"Bronze",   total_orders:2,  total_spend:38.97,  churn_risk:0.69, propensity:0.29, days_since_last:203 },
+    { customer_id:"C017", email_hash:"eccbc87e4b5ce2fe28308fd9f2a7baf3", acquisition_channel:"cpc",      first_purchase_date:"2021-10-11", ltv_band:"Silver",   total_orders:5,  total_spend:148.20, churn_risk:0.25, propensity:0.72, days_since_last:31  },
+    { customer_id:"C018", email_hash:"a87ff679a2f3e71d9181a67b7542122c", acquisition_channel:"referral", first_purchase_date:"2023-06-04", ltv_band:"Bronze",   total_orders:1,  total_spend:12.99,  churn_risk:0.87, propensity:0.14, days_since_last:245 },
+    { customer_id:"C019", email_hash:"e4da3b7fbbce2345d7772b0674a318d5", acquisition_channel:"organic",  first_purchase_date:"2021-04-25", ltv_band:"Gold",     total_orders:11, total_spend:334.80, churn_risk:0.11, propensity:0.91, days_since_last:7   },
+    { customer_id:"C020", email_hash:"1679091c5a880faf6fb5e6087eb1b2dc", acquisition_channel:"email",    first_purchase_date:"2022-02-14", ltv_band:"Silver",   total_orders:6,  total_spend:167.90, churn_risk:0.29, propensity:0.67, days_since_last:39  }
+  ],
+
+  /* ── TRANSACTIONAL ORDERS ────────────────────────────────────────────────── */
+  transactionalOrders: [
+    { order_id:"T-38260", customer_id:"C001", order_date:"2023-10-01", channel:"organic",  items_count:2, subtotal:48.98, discount:4.90, tax:4.41, shipping:5.99, total_revenue:54.48, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38261", customer_id:"C002", order_date:"2023-10-01", channel:"cpc",      items_count:1, subtotal:25.99, discount:0,    tax:2.34, shipping:5.99, total_revenue:34.32, payment_method:"paypal", status:"completed"  },
+    { order_id:"T-38262", customer_id:"C003", order_date:"2023-10-02", channel:"email",    items_count:3, subtotal:72.97, discount:7.30, tax:6.57, shipping:0,    total_revenue:72.24, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38263", customer_id:"C004", order_date:"2023-10-02", channel:"referral", items_count:1, subtotal:22.99, discount:0,    tax:2.07, shipping:5.99, total_revenue:31.05, payment_method:"card",  status:"returned"   },
+    { order_id:"T-38264", customer_id:"C005", order_date:"2023-10-03", channel:"organic",  items_count:2, subtotal:43.98, discount:2.20, tax:3.76, shipping:5.99, total_revenue:51.53, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38265", customer_id:"C006", order_date:"2023-10-03", channel:"display",  items_count:1, subtotal:14.99, discount:0,    tax:1.35, shipping:5.99, total_revenue:22.33, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38266", customer_id:"C007", order_date:"2023-10-04", channel:"cpc",      items_count:3, subtotal:67.97, discount:6.80, tax:5.50, shipping:0,    total_revenue:66.67, payment_method:"paypal", status:"completed"  },
+    { order_id:"T-38267", customer_id:"C008", order_date:"2023-10-04", channel:"organic",  items_count:4, subtotal:98.96, discount:9.90, tax:8.01, shipping:0,    total_revenue:97.07, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38268", customer_id:"C009", order_date:"2023-10-05", channel:"email",    items_count:1, subtotal:19.99, discount:0,    tax:1.80, shipping:5.99, total_revenue:27.78, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38269", customer_id:"C010", order_date:"2023-10-05", channel:"referral", items_count:1, subtotal:15.99, discount:0,    tax:1.44, shipping:5.99, total_revenue:23.42, payment_method:"card",  status:"cancelled"  },
+    { order_id:"T-38270", customer_id:"C011", order_date:"2023-10-06", channel:"organic",  items_count:2, subtotal:38.98, discount:3.90, tax:3.15, shipping:5.99, total_revenue:44.22, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38271", customer_id:"C012", order_date:"2023-10-06", channel:"cpc",      items_count:2, subtotal:47.98, discount:4.80, tax:3.89, shipping:5.99, total_revenue:53.06, payment_method:"paypal", status:"completed"  },
+    { order_id:"T-38272", customer_id:"C013", order_date:"2023-10-07", channel:"organic",  items_count:5, subtotal:124.95, discount:12.50, tax:10.12, shipping:0, total_revenue:122.57, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38273", customer_id:"C014", order_date:"2023-10-07", channel:"email",    items_count:1, subtotal:29.99, discount:0,    tax:2.70, shipping:5.99, total_revenue:38.68, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38274", customer_id:"C015", order_date:"2023-10-08", channel:"organic",  items_count:2, subtotal:45.98, discount:4.60, tax:3.72, shipping:5.99, total_revenue:51.09, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38275", customer_id:"C016", order_date:"2023-10-08", channel:"display",  items_count:1, subtotal:21.99, discount:0,    tax:1.98, shipping:5.99, total_revenue:29.96, payment_method:"card",  status:"returned"   },
+    { order_id:"T-38276", customer_id:"C017", order_date:"2023-10-09", channel:"cpc",      items_count:3, subtotal:71.97, discount:7.20, tax:5.83, shipping:0,    total_revenue:70.60, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38277", customer_id:"C018", order_date:"2023-10-09", channel:"referral", items_count:1, subtotal:12.99, discount:0,    tax:1.17, shipping:5.99, total_revenue:20.15, payment_method:"paypal", status:"completed"  },
+    { order_id:"T-38278", customer_id:"C019", order_date:"2023-10-10", channel:"organic",  items_count:3, subtotal:82.97, discount:8.30, tax:6.70, shipping:0,    total_revenue:81.37, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38279", customer_id:"C020", order_date:"2023-10-10", channel:"email",    items_count:2, subtotal:43.98, discount:2.20, tax:3.76, shipping:5.99, total_revenue:51.53, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38280", customer_id:"C001", order_date:"2023-10-11", channel:"organic",  items_count:1, subtotal:25.99, discount:0,    tax:2.34, shipping:5.99, total_revenue:34.32, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38281", customer_id:"C003", order_date:"2023-10-11", channel:"email",    items_count:4, subtotal:99.96, discount:9.00, tax:8.19, shipping:0,    total_revenue:99.15, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38282", customer_id:"C005", order_date:"2023-10-12", channel:"organic",  items_count:2, subtotal:41.98, discount:2.10, tax:3.59, shipping:5.99, total_revenue:49.46, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38283", customer_id:"C007", order_date:"2023-10-12", channel:"cpc",      items_count:1, subtotal:49.99, discount:5.00, tax:4.05, shipping:0,    total_revenue:49.04, payment_method:"paypal", status:"completed"  },
+    { order_id:"T-38284", customer_id:"C008", order_date:"2023-10-13", channel:"organic",  items_count:5, subtotal:118.95, discount:11.90, tax:9.63, shipping:0,  total_revenue:116.68, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38285", customer_id:"C011", order_date:"2023-10-13", channel:"organic",  items_count:2, subtotal:34.98, discount:3.50, tax:2.83, shipping:5.99, total_revenue:40.30, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38286", customer_id:"C013", order_date:"2023-10-14", channel:"organic",  items_count:3, subtotal:78.97, discount:7.90, tax:6.39, shipping:0,    total_revenue:77.46, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38287", customer_id:"C015", order_date:"2023-10-14", channel:"organic",  items_count:1, subtotal:20.99, discount:0,    tax:1.89, shipping:5.99, total_revenue:28.87, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38288", customer_id:"C017", order_date:"2023-10-15", channel:"cpc",      items_count:2, subtotal:57.98, discount:5.80, tax:4.70, shipping:5.99, total_revenue:62.87, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38289", customer_id:"C019", order_date:"2023-10-15", channel:"organic",  items_count:4, subtotal:95.96, discount:9.60, tax:7.77, shipping:0,    total_revenue:94.13, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38290", customer_id:"C002", order_date:"2023-10-16", channel:"cpc",      items_count:1, subtotal:22.99, discount:0,    tax:2.07, shipping:5.99, total_revenue:31.05, payment_method:"paypal", status:"returned"   },
+    { order_id:"T-38291", customer_id:"C004", order_date:"2023-10-16", channel:"referral", items_count:1, subtotal:25.50, discount:0,    tax:2.30, shipping:5.99, total_revenue:33.79, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38292", customer_id:"C006", order_date:"2023-10-17", channel:"display",  items_count:1, subtotal:18.99, discount:0,    tax:1.71, shipping:5.99, total_revenue:26.69, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38293", customer_id:"C009", order_date:"2023-10-17", channel:"email",    items_count:2, subtotal:37.98, discount:0,    tax:3.42, shipping:5.99, total_revenue:47.39, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38294", customer_id:"C010", order_date:"2023-10-18", channel:"referral", items_count:1, subtotal:25.99, discount:0,    tax:2.34, shipping:5.99, total_revenue:34.32, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38295", customer_id:"C012", order_date:"2023-10-18", channel:"cpc",      items_count:2, subtotal:39.98, discount:4.00, tax:3.24, shipping:5.99, total_revenue:45.21, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38296", customer_id:"C014", order_date:"2023-10-19", channel:"email",    items_count:1, subtotal:29.99, discount:3.00, tax:2.43, shipping:5.99, total_revenue:35.41, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38297", customer_id:"C016", order_date:"2023-10-19", channel:"display",  items_count:1, subtotal:16.99, discount:0,    tax:1.53, shipping:5.99, total_revenue:24.51, payment_method:"paypal", status:"cancelled"  },
+    { order_id:"T-38298", customer_id:"C018", order_date:"2023-10-20", channel:"referral", items_count:1, subtotal:12.99, discount:0,    tax:1.17, shipping:5.99, total_revenue:20.15, payment_method:"card",  status:"completed"  },
+    { order_id:"T-38299", customer_id:"C020", order_date:"2023-10-20", channel:"email",    items_count:3, subtotal:54.97, discount:5.50, tax:4.45, shipping:0,    total_revenue:53.92, payment_method:"card",  status:"completed"  }
+  ],
+
+  /* ── ERD CONFIG ─────────────────────────────────────────────────────────── */
+  erdEntities: {
+    events:       { color:"#2563EB", fields:["event_date PK","event_name","event_params[]","user_pseudo_id FK","ga_session_id FK","event_timestamp","platform","stream_id"] },
+    users:        { color:"#059669", fields:["user_pseudo_id PK","first_seen","device_category","geo_country","traffic_source","ltv_tier","churn_score"] },
+    sessions:     { color:"#7C3AED", fields:["ga_session_id PK","user_pseudo_id FK","session_start","session_end","channel_group","landing_page","engaged_session"] },
+    transactions: { color:"#D97706", fields:["transaction_id PK","ga_session_id FK","order_date","revenue","currency","shipping","tax","coupon"] },
+    items:        { color:"#DC2626", fields:["item_id PK","transaction_id FK","item_name","item_category","quantity","price","discount","brand"] },
+    gtm_tags:     { color:"#0F766E", fields:["tag_id PK","trigger_id FK","tag_type","tag_name","fires_on","consent_mode","status"] }
+  },
+  erdRelationships: [
+    { from:"events",   to:"users",        type:"many-to-one", via:"user_pseudo_id",  label:"belongs to" },
+    { from:"events",   to:"sessions",     type:"many-to-one", via:"ga_session_id",   label:"part of" },
+    { from:"sessions", to:"transactions", type:"one-to-many", via:"ga_session_id",   label:"generates" },
+    { from:"transactions", to:"items",   type:"one-to-many", via:"transaction_id",  label:"contains" },
+    { from:"gtm_tags", to:"events",      type:"one-to-many", via:"fires_on event",  label:"fires" }
+  ],
+
+  /* ── DATA PIPELINE CONFIG ────────────────────────────────────────────────── */
+  pipelineArchitecture: {
+    sources: [
+      { name:"GA4",           icon:"G",  color:"#4361EE", detail:"G-XXXXXXXXXX · 18 events · Enhanced Measurement" },
+      { name:"Google Ads",    icon:"A",  color:"#2563EB", detail:"Campaign · Ad Group · Keyword performance" },
+      { name:"DV360",         icon:"D",  color:"#7C3AED", detail:"Display & Video 360 · impressions · clicks · views" },
+      { name:"CM360",         icon:"C",  color:"#D97706", detail:"Campaign Manager 360 · floodlight · cross-channel" },
+      { name:"YouTube",       icon:"Y",  color:"#DC2626", detail:"YouTube Analytics · video views · watch time" },
+      { name:"Cloud Storage", icon:"S",  color:"#059669", detail:"GCS bucket gs://ga4-exports/ · daily event exports" }
+    ],
+    ingestion: [
+      { name:"Cloud Dataflow",         detail:"Apache Beam streaming pipeline · real-time GA4 event ingestion · auto-scaling",           icon:"⚙", color:"#2563EB" },
+      { name:"BQ Data Transfer",       detail:"BigQuery Data Transfer Service · scheduled Google Ads / DV360 / CM360 imports · daily",   icon:"🔄", color:"#4361EE" },
+      { name:"AppsFlyer API",          detail:"Mobile attribution API · postback events → BigQuery via Cloud Functions · hourly",        icon:"📱", color:"#7C3AED" }
+    ],
+    rawZone: {
+      label:"Raw / Bronze Zone",
+      table:"events_YYYYMMDD",
+      issues:["NULL event_params — missing ecommerce object","Duplicate transaction_ids (T-38291 appears twice)","Mixed date formats: YYYY-MM-DD vs DD/MM/YYYY","String revenue: '\\$25.50' instead of FLOAT64","Wrong event names: 'AddToCart' vs 'add_to_cart'","Mixed currency encodings: '$', '€', '25,99'"]
+    },
+    transform: {
+      fusion:"Cloud Data Fusion · visual ETL pipeline · handles schema evolution",
+      dbt:"dbt Core · stg_ga4_events → fact_orders → fact_customer_ltv · YAML tests",
+      airflow:"Cloud Composer (Airflow 2.6) · DAG: ga4_daily_pipeline · schedule: 0 6 * * * · SLA: 120 min"
+    },
+    serving: [
+      { name:"ML Predictions",   detail:"Propensity AUC 0.78 · LTV R²=0.95 · Cart Abandon AUC 0.74",  color:"#7C3AED" },
+      { name:"Looker Studio",    detail:"8 dashboards · Revenue, Funnel, Audience, LTV",          color:"#059669" },
+      { name:"API Endpoints",    detail:"Cloud Run · REST API · real-time propensity scores",     color:"#2563EB" },
+      { name:"BigQuery BI",      detail:"Connected Sheet · Scheduled queries · Data Studio",      color:"#D97706" }
+    ]
+  }
 };

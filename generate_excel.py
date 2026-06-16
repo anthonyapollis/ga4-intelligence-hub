@@ -969,6 +969,482 @@ def build_bigquery(wb):
     ws.freeze_panes = "A3"
 
 
+# ─── SHEET: RAW DATA (DIRTY) ─────────────────────────────────────────────────
+def build_dirty_data(wb):
+    ws = wb.create_sheet("Raw Data (Dirty)")
+    ws.sheet_properties.tabColor = "DC2626"
+
+    ws.merge_cells("A1:J1")
+    t = ws["A1"]
+    t.value = "RAW GA4 EXPORT — UNPROCESSED / DIRTY DATA  ·  Bronze Layer  ·  Issues highlighted in red"
+    t.fill = fill("7F1D1D"); t.font = font(bold=True, size=12, color=C_WHITE)
+    t.alignment = align("center"); ws.row_dimensions[1].height = 26
+
+    ws.merge_cells("A2:J2")
+    n = ws["A2"]
+    n.value = ("Quality issues present: NULL event_params · duplicate transaction_ids · mixed date formats "
+               "(DD/MM/YYYY vs YYYYMMDD) · string currency '$25.50' · wrong event names ('AddToCart') · "
+               "NULL user_pseudo_id · mixed timezones · encoding errors")
+    n.fill = fill("FEF2F2"); n.font = font(size=9, color="DC2626", italic=True)
+    n.alignment = align("left", "center", wrap=True); ws.row_dimensions[2].height = 36
+
+    headers = ["event_date","event_name","user_pseudo_id","transaction_id",
+               "revenue","currency","device","country","source","issue_flag"]
+    for ci, h in enumerate(headers, 1):
+        c = ws.cell(row=3, column=ci, value=h)
+        c.fill = fill("7F1D1D"); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    ws.row_dimensions[3].height = 20
+
+    DIRTY_ROWS = [
+        ("20201101","page_view","48E1D4A5B3C2","",       "",         "USD","desktop","United States","google",""),
+        ("01/11/2020","purchase","2F9A8C1D4E7B","T-38291","$112.50",  "USD","mobile", "India",         "google","DATE FORMAT: DD/MM/YYYY"),
+        ("20201101","AddToCart", "3C5D6E7F8A9B","",       "",         "USD","desktop","Ireland",        "(direct)","EVENT NAME: should be add_to_cart"),
+        ("20201103","purchase",  None,          "T-38291","112.50",   "USD","mobile", "United States",  "google","NULL user_pseudo_id + DUPLICATE txn_id"),
+        ("20201107","purchase",  "5E4F3A2B1C0D","",       "56.00",    "",   "desktop","Ireland",        "(direct)","MISSING currency"),
+        ("20201108","session_start","6D5E4F3A2B1","T-38295","-54.99","USD","desktop","Canada",         "google","NEGATIVE revenue"),
+        ("20201112","purchase",  "7C6D5E4F3A2B","T-38296","22.00",   "USD","mobile", "United Kingdom", "bing",""),
+        ("20201115","purchase",  "8B7C6D5E4F3A","T-38297","143.96",  "USD","desktop","Ireland",        "google",""),
+        ("20201115","Purchase",  "9A8B7C6D5E4F","T-38298","32.00",   "USD","mobile", "United Kingdom", "youtube.com","EVENT CASE: 'Purchase' not 'purchase'"),
+        ("2020-12-01","purchase","0F9A8B7C6D5E","T-38299","79.98",   "USD","desktop","Japan",          "google","DATE FORMAT: YYYY-MM-DD"),
+        ("20201210","purchase",  "1E0F9A8B7C6D","T-38300","196.95",  "usd","desktop","Canada",         "newsletter","CURRENCY CASE: 'usd' not 'USD'"),
+        ("20201215","purchase",  "2D1E0F9A8B7C","T-38301","$87.97",  "USD","mobile", "United States",  "google","REVENUE TYPE: string '$87.97'"),
+        ("20201215","purchase",  "3C2D1E0F9A8B","T-38302","59.98",   "USD","desktop","United States",  "google",""),
+        ("20201220","purchase",  "4B3C2D1E0F9A","T-38303","35.00",   "USD","desktop","Singapore",      "google",""),
+        ("20201224","purchase",  "5A4B3C2D1E0F","T-38304","242.94",  "USD","desktop","Ireland",        "(direct)",""),
+        ("20201226","purchase",  "6F5A4B3C2D1E","T-38305","47.98",   "USD","mobile", "Canada",         "google",""),
+        ("20201231","purchase",  "7E6F5A4B3C2D","T-38306","149.96",  "USD","desktop","United States",  "google",""),
+        ("20210101","purchase",  "8D7E6F5A4B3C","T-38307","22.00",   "USD","mobile", "India",          "google",""),
+        ("20210108","purchase",  "9C8D7E6F5A4B","T-38308","94.97",   "USD","desktop","United States",  "google",""),
+        ("20210115","purchase",  None,          "T-38309","62.00",   "USD","desktop","United Kingdom", "bing","NULL user_pseudo_id"),
+        ("20210120","purchase",  "1A0B9C8D7E6F","T-38310","167.96",  "USD","desktop","Ireland",        "mail.google.com",""),
+        ("20210125","purchase",  "2B1A0B9C8D7E","T-38311","28.00",   "USD","mobile", "France",         "google",""),
+        ("20210131","purchase",  "3C2B1A0B9C8D","T-38312","107.97",  "USD","desktop","Canada",         "google",""),
+        ("20210130","purchase",  "4D3C2B1A0B9C","T-38313","46.00",   "USD","mobile", "Australia",      "google",""),
+        ("20210205","purchase",  "5E4D3C2B1A0B","T-38314","131.97",  "USD","desktop","Ireland",        "newsletter",""),
+        ("20210214","purchase",  "6F5E4D3C2B1A","T-38315","58.00",   "USD","desktop","United States",  "google",""),
+        ("20210301","purchase",  "7A6F5E4D3C2B","T-38316","19.99",   "USD","mobile", "United Kingdom", "facebook.com",""),
+        ("20210315","purchase",  "8B7A6F5E4D3C","T-38317","159.96",  "USD","desktop","Canada",         "google",""),
+        ("20210401","purchase",  "9C8B7A6F5E4D","T-38318","64.98",   "USD","desktop","United States",  "google",""),
+        ("20210501","purchase",  None,          "T-38319","212.95",  "USD","desktop","Ireland",        "(direct)","NULL user_pseudo_id"),
+    ]
+
+    for ri, row in enumerate(DIRTY_ROWS, 4):
+        issue = row[9]
+        is_bad = bool(issue) or row[2] is None
+        bg_row = "FEF2F2" if is_bad else (C_BG if ri % 2 == 0 else C_WHITE)
+        ws.row_dimensions[ri].height = 18
+        for ci, val in enumerate(row, 1):
+            c = ws.cell(row=ri, column=ci, value=val if val is not None else "NULL")
+            c.font = font(size=9, color="DC2626" if (val is None or (ci == 10 and issue)) else "374151")
+            if val is None:
+                c.fill = fill("FEE2E2"); c.font = font(bold=True, size=9, color="DC2626")
+            elif ci == 10 and issue:
+                c.fill = fill("FEF3C7"); c.font = font(size=9, color="92400E", italic=True)
+            else:
+                c.fill = fill(bg_row)
+            c.alignment = align("left", "center")
+            c.border = thin_border()
+
+    ws.merge_cells("A35:J35")
+    fix = ws["A35"]
+    fix.value = ("dbt FIX  →  stg_ga4_events.sql: "
+                 "SAFE_CAST(revenue AS FLOAT64), "
+                 "REGEXP_REPLACE(revenue,'[$]',''), "
+                 "COALESCE(user_pseudo_id,'UNKNOWN'), "
+                 "ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY event_timestamp) = 1 AS is_deduped, "
+                 "PARSE_DATE('%Y%m%d', REGEXP_REPLACE(event_date,r'[-/]','')) AS clean_date, "
+                 "UPPER(currency) AS currency, LOWER(event_name) AS event_name")
+    fix.fill = fill("F0FDF4"); fix.font = font(size=9, color="166534", italic=True)
+    fix.alignment = align("left", "center", wrap=True); ws.row_dimensions[35].height = 48
+
+    set_col_widths(ws,{"A":13,"B":16,"C":22,"D":14,"E":12,"F":10,"G":10,"H":16,"I":14,"J":38})
+    ws.freeze_panes = "A4"
+
+
+# ─── SHEET: MASTER PRODUCTS ──────────────────────────────────────────────────
+def build_master_products(wb):
+    ws = wb.create_sheet("Master — Products")
+    ws.sheet_properties.tabColor = "059669"
+
+    ws.merge_cells("A1:K1")
+    t = ws["A1"]
+    t.value = "PRODUCT MASTER DATA  ·  25 SKUs  ·  Silver Layer (dbt dim_product)  ·  Source: Google Merchandise Store"
+    t.fill = fill("064E3B"); t.font = font(bold=True, size=12, color=C_WHITE)
+    t.alignment = align("center"); ws.row_dimensions[1].height = 26
+
+    hdrs = ["product_id","product_name","category","brand","price_usd","cost_usd",
+            "margin_pct","sku","in_stock","weight_kg","ltv_contribution_pct"]
+    for ci, h in enumerate(hdrs, 1):
+        c = ws.cell(row=2, column=ci, value=h)
+        c.fill = fill("065F46"); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    ws.row_dimensions[2].height = 20
+
+    PRODUCTS = [
+        ("P-0001","Google Unisex Eco Tee","Apparel","Google",   28.00,11.20,60.0,"GMS-ECO-TEE-M",  "Y",0.28,8.2),
+        ("P-0002","YouTube Logo Cap",    "Accessories","YouTube",22.00,8.80,60.0,"YT-CAP-BLK",     "Y",0.15,6.1),
+        ("P-0003","Android Zip Hoodie",  "Apparel","Android",   65.00,28.60,56.0,"AND-HOOD-L",     "Y",0.72,11.4),
+        ("P-0004","Google Maps Pin Mug", "Drinkware","Google",  18.00,5.40,70.0,"GGL-MUG-PIN",     "Y",0.41,9.2),
+        ("P-0005","Chrome Laptop Sleeve","Bags","Chrome",       45.00,18.00,60.0,"CHR-SLVE-15",    "Y",0.55,5.3),
+        ("P-0006","Stadia Controller Pad","Electronics","Stadia",79.00,38.40,51.4,"STD-CTRL-V2",  "N",0.61,7.8),
+        ("P-0007","Google Kids Dino Tee","Apparel","Google",    22.00,8.80,60.0,"GMS-KIDS-DINO-4", "Y",0.18,4.1),
+        ("P-0008","Firebase Dev Sticker Pack","Stationery","Firebase",8.00,1.20,85.0,"FIR-STK-10","Y",0.02,3.2),
+        ("P-0009","YouTube Premium Flask","Drinkware","YouTube", 34.00,12.24,64.0,"YT-FLASK-SS",   "Y",0.38,6.8),
+        ("P-0010","Pixel Buds Case",     "Electronics","Google",29.00,13.92,52.0,"PIX-BUDS-CASE",  "Y",0.09,4.4),
+        ("P-0011","GCP Cloud Backpack",  "Bags","Google Cloud", 89.00,40.06,55.0,"GCP-BAG-PRO",   "Y",1.20,18.6),
+        ("P-0012","Android Beanie Hat",  "Accessories","Android",18.00,5.40,70.0,"AND-BEAN-GRN",  "Y",0.11,2.8),
+        ("P-0013","Chrome Notebook A5",  "Stationery","Chrome", 14.00,3.50,75.0,"CHR-NOTE-A5",    "Y",0.18,5.3),
+        ("P-0014","Google Sport Bottle", "Drinkware","Google",  26.00,9.36,64.0,"GMS-BTL-750ML",  "Y",0.55,12.4),
+        ("P-0015","YouTube Studio Light","Electronics","YouTube",149.00,74.50,50.0,"YT-RING-LITE",  "N",1.85,22.7),
+        ("P-0016","Google Mesh Shorts",  "Apparel","Google",    32.00,12.80,60.0,"GMS-SHORT-L",   "Y",0.35,4.6),
+        ("P-0017","Firebase Mug",        "Drinkware","Firebase",18.00,5.40,70.0,"FIR-MUG-ORG",    "Y",0.21,4.1),
+        ("P-0018","Google Pixel Stand",  "Electronics","Google",79.00,36.34,54.0,"PIX-STAND-G2",  "Y",0.44,9.8),
+        ("P-0019","Android Kids Plush",  "Toys","Android",      24.00,7.20,70.0,"AND-PLUSH-GRN",  "Y",0.38,8.3),
+        ("P-0020","GCP Polo Shirt",      "Apparel","Google Cloud",38.00,15.20,60.0,"GCP-POLO-M",  "Y",0.52,7.2),
+        ("P-0021","Google Socks 3-Pack", "Accessories","Google",14.00,4.20,70.0,"GMS-SOCKS-3PK",  "Y",0.12,3.1),
+        ("P-0022","Chrome Tote Bag",     "Bags","Chrome",       32.00,11.20,65.0,"CHR-TOTE-NAT",  "Y",0.65,4.8),
+        ("P-0023","YouTube Hoodie",      "Apparel","YouTube",   65.00,28.60,56.0,"YT-HOOD-RED-XL", "N",0.71,12.1),
+        ("P-0024","Google Umbrella",     "Accessories","Google",45.00,18.00,60.0,"GMS-UMBRLL",    "Y",0.48,9.4),
+        ("P-0025","Google Fleece Jacket","Apparel","Google",    95.00,47.50,50.0,"GMS-FLEECE-XL",  "Y",1.18,19.2),
+    ]
+
+    for ri, p in enumerate(PRODUCTS, 3):
+        in_stock_flag = p[8]
+        bg = C_BG if ri % 2 == 0 else C_WHITE
+        ws.row_dimensions[ri].height = 18
+        data_cell(ws, ri, 1,  p[0],  bold=True, bg=bg, fg=C_BLUE)
+        data_cell(ws, ri, 2,  p[1],  bg=bg, fg=C_NAVY)
+        data_cell(ws, ri, 3,  p[2],  bg=bg, fg=C_MUTED)
+        data_cell(ws, ri, 4,  p[3],  bg=bg, fg=C_MUTED)
+        data_cell(ws, ri, 5,  p[4],  bg=bg, fg=C_NAVY, num_fmt='"$"#,##0.00', h="right")
+        data_cell(ws, ri, 6,  p[5],  bg=bg, fg=C_MUTED, num_fmt='"$"#,##0.00', h="right")
+        data_cell(ws, ri, 7,  p[6]/100, bg=bg, fg=C_GREEN, num_fmt='0.0%', h="right")
+        data_cell(ws, ri, 8,  p[7],  bg=bg, fg=C_NAVY)
+        badge_cell(ws, ri, 9, in_stock_flag,
+                   C_GREEN_LT if in_stock_flag == "Y" else C_RED_LT,
+                   C_GREEN    if in_stock_flag == "Y" else C_RED)
+        data_cell(ws, ri, 10, p[9],  bg=bg, fg=C_MUTED, num_fmt='0.00"kg"', h="right")
+        data_cell(ws, ri, 11, p[10]/100, bg=bg, fg=C_VIOLET, num_fmt='0.0%', h="right")
+
+    # Margin summary row
+    ws.row_dimensions[28].height = 6
+    ws.row_dimensions[29].height = 22
+    section_header(ws, 29, 1, "CATEGORY REVENUE DISTRIBUTION  ·  % of total $891,480 dataset revenue", C_NAVY, merge_to=11)
+    cat_data = [("Apparel",46.2),("Bags",18.4),("Electronics",14.8),("Drinkware",11.3),("Accessories",5.9),("Stationery",2.8),("Toys",0.6)]
+    hdrs2 = ["Category","Revenue Share %","Avg Margin %","Notes"]
+    for ci, h in enumerate(hdrs2, 1):
+        c = ws.cell(row=30, column=ci, value=h)
+        c.fill = fill(C_GREEN); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    margins = {"Apparel":58.0,"Bags":61.5,"Electronics":51.8,"Drinkware":67.0,"Accessories":63.3,"Stationery":78.5,"Toys":70.0}
+    notes = {"Apparel":"Highest volume; seasonal peaks Black Friday/Dec","Bags":"Strong YoY growth +22%","Electronics":"Lowest margin; high AOV","Drinkware":"Fastest growing category","Accessories":"Low AOV, high repurchase","Stationery":"Digital download included","Toys":"Limited SKU range"}
+    for ri, (cat, pct_val) in enumerate(cat_data, 31):
+        ws.row_dimensions[ri].height = 18
+        bg = C_BG if ri % 2 == 0 else C_WHITE
+        data_cell(ws, ri, 1, cat,  bold=True, bg=bg, fg=C_GREEN)
+        data_cell(ws, ri, 2, pct_val/100, bg=bg, fg=C_NAVY, num_fmt='0.0%', h="right")
+        data_cell(ws, ri, 3, margins[cat]/100, bg=bg, fg=C_GREEN, num_fmt='0.0%', h="right")
+        data_cell(ws, ri, 4, notes[cat], bg=bg, fg=C_MUTED, wrap=True)
+
+    # Pie chart — category revenue share
+    pie = PieChart()
+    pie.title = "Revenue by Category"
+    pie.style = 10
+    pie.dataLabels = DataLabelList()
+    pie.dataLabels.showPercent = True
+    cats_ref  = Reference(ws, min_col=1, min_row=31, max_row=37)
+    vals_ref  = Reference(ws, min_col=2, min_row=31, max_row=37)
+    pie.add_data(vals_ref); pie.set_categories(cats_ref)
+    pie.width = 14; pie.height = 10
+    ws.add_chart(pie, "F29")
+
+    set_col_widths(ws,{"A":10,"B":28,"C":14,"D":12,"E":11,"F":11,"G":10,"H":18,"I":9,"J":10,"K":16})
+    ws.freeze_panes = "A3"
+
+
+# ─── SHEET: MASTER CUSTOMERS ─────────────────────────────────────────────────
+def build_master_customers(wb):
+    ws = wb.create_sheet("Master — Customers")
+    ws.sheet_properties.tabColor = "7C3AED"
+
+    ws.merge_cells("A1:L1")
+    t = ws["A1"]
+    t.value = "CUSTOMER MASTER DATA  ·  20 Sample Profiles  ·  Gold Layer (dbt fact_customer_ltv)  ·  PII hashed SHA-256"
+    t.fill = fill("4C1D95"); t.font = font(bold=True, size=12, color=C_WHITE)
+    t.alignment = align("center"); ws.row_dimensions[1].height = 26
+
+    hdrs = ["customer_id","email_sha256","acq_channel","first_purchase","ltv_band",
+            "total_orders","total_spend_usd","churn_risk","propensity_score",
+            "days_since_last","preferred_device","loyalty_tier"]
+    for ci, h in enumerate(hdrs, 1):
+        c = ws.cell(row=2, column=ci, value=h)
+        c.fill = fill("5B21B6"); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    ws.row_dimensions[2].height = 20
+
+    CUSTOMERS = [
+        ("C-001","a3f5b8d2...e4c9","organic","2020-11-01","Platinum",8,487.82,0.04,0.94,12,"desktop","Champion"),
+        ("C-002","7d2e9f1a...b6c3","cpc","2020-11-03","Gold",4,218.47,0.18,0.79,28,"mobile","Loyal"),
+        ("C-003","2c8b4e6f...a1d5","email","2020-11-07","Platinum",6,362.91,0.06,0.91,8,"desktop","Champion"),
+        ("C-004","f1a3c5e7...9b2d","organic","2020-12-01","Silver",2,107.97,0.41,0.52,65,"desktop","Active"),
+        ("C-005","9e7d5c3b...1f4a","social","2020-12-10","Platinum",9,621.83,0.03,0.96,5,"desktop","Champion"),
+        ("C-006","6b4a2f8e...c7d1","organic","2020-12-15","Gold",3,175.94,0.22,0.73,41,"mobile","Loyal"),
+        ("C-007","4d2c0a8f...e5b3","cpc","2021-01-01","Bronze",1,22.00,0.74,0.21,148,"mobile","At Risk"),
+        ("C-008","c9e7d5b3...a1f2","organic","2021-01-08","Gold",4,236.91,0.16,0.82,19,"desktop","Loyal"),
+        ("C-009","8f6e4c2a...b0d9","referral","2021-01-15","Silver",2,124.00,0.38,0.58,52,"desktop","Active"),
+        ("C-010","5a3c1e9f...d7b4","email","2021-01-20","Platinum",7,418.76,0.07,0.89,14,"desktop","Champion"),
+        ("C-011","3b1d9f7e...c5a2","organic","2021-02-01","Bronze",1,28.00,0.81,0.17,189,"mobile","Lost"),
+        ("C-012","e7c5a3f1...b9d6","cpc","2021-02-14","Silver",2,117.98,0.44,0.49,72,"mobile","At Risk"),
+        ("C-013","d5b3a1f9...c7e4","organic","2021-03-01","Bronze",1,19.99,0.87,0.12,201,"mobile","Lost"),
+        ("C-014","b9d7e5c3...a1f0","organic","2021-03-15","Gold",5,319.80,0.11,0.86,22,"desktop","Loyal"),
+        ("C-015","a1f9e7d5...b3c8","display","2021-04-01","Silver",2,128.98,0.35,0.61,38,"tablet","Active"),
+        ("C-016","f3d1b9a7...e5c2","email","2021-05-01","Platinum",10,792.45,0.02,0.97,3,"desktop","Champion"),
+        ("C-017","7e5c3a1f...d9b4","organic","2021-06-01","Bronze",1,18.00,0.78,0.19,176,"mobile","At Risk"),
+        ("C-018","2a0f8e6c...b4d7","cpc","2021-07-01","Silver",2,98.99,0.49,0.44,88,"desktop","Active"),
+        ("C-019","5d3b1f9e...a7c2","organic","2021-08-01","Gold",4,224.92,0.19,0.77,33,"mobile","Loyal"),
+        ("C-020","9c7a5e3b...f1d6","social","2021-09-01","Bronze",1,32.00,0.69,0.28,121,"mobile","At Risk"),
+    ]
+
+    churn_risk_colors = {"0.0-0.2":"D1FAE5","0.2-0.4":"FEF3C7","0.4-0.6":"FDE68A","0.6-0.8":"FEE2E2","0.8-1.0":"FECACA"}
+    tier_colors = {"Champion":"7C3AED","Loyal":"2563EB","Active":"059669","At Risk":"D97706","Lost":"DC2626"}
+
+    for ri, c_row in enumerate(CUSTOMERS, 3):
+        ws.row_dimensions[ri].height = 18
+        bg = C_BG if ri % 2 == 0 else C_WHITE
+        churn = c_row[7]
+        churn_bg = "D1FAE5" if churn<0.2 else "FEF3C7" if churn<0.4 else "FDE68A" if churn<0.6 else "FEE2E2" if churn<0.8 else "FECACA"
+        churn_fg = C_GREEN if churn<0.2 else C_GOLD if churn<0.5 else C_RED
+        ltv_colors = {"Platinum":"7C3AED","Gold":"D97706","Silver":"64748B","Bronze":"92400E"}
+        ltv_band = c_row[4]
+        tier = c_row[11]
+        tier_bg_map = {"Champion":"F5F3FF","Loyal":"EFF6FF","Active":"F0FDF4","At Risk":"FFFBEB","Lost":"FEF2F2"}
+        tier_fg_map = {"Champion":"7C3AED","Loyal":"1D4ED8","Active":"065F46","At Risk":"92400E","Lost":"DC2626"}
+
+        data_cell(ws, ri, 1,  c_row[0],  bold=True, bg=bg, fg=C_VIOLET)
+        c2 = ws.cell(row=ri, column=2, value=c_row[1])
+        c2.fill = fill("1E293B"); c2.font = Font(name="Consolas", size=8, color="94A3B8")
+        c2.alignment = align("left","center"); c2.border = thin_border()
+        data_cell(ws, ri, 3,  c_row[2],  bg=bg, fg=C_MUTED)
+        data_cell(ws, ri, 4,  c_row[3],  bg=bg, fg=C_MUTED)
+        badge_cell(ws, ri, 5, ltv_band, ltv_colors.get(ltv_band,"64748B")+"22", ltv_colors.get(ltv_band,"64748B"))
+        data_cell(ws, ri, 6,  c_row[5],  bg=bg, fg=C_NAVY, h="center")
+        data_cell(ws, ri, 7,  c_row[6],  bg=bg, fg=C_NAVY, num_fmt='"$"#,##0.00', h="right")
+        c8 = ws.cell(row=ri, column=8, value=churn)
+        c8.fill = fill(churn_bg); c8.font = font(bold=True, size=10, color=churn_fg)
+        c8.number_format = "0.00"; c8.alignment = align("center"); c8.border = thin_border()
+        data_cell(ws, ri, 9,  c_row[8],  bg=bg, fg=C_GREEN, num_fmt='0.00', h="center")
+        data_cell(ws, ri, 10, c_row[9],  bg=bg, fg=C_NAVY, h="center")
+        data_cell(ws, ri, 11, c_row[10], bg=bg, fg=C_MUTED)
+        badge_cell(ws, ri, 12, tier, tier_bg_map.get(tier,"F8FAFC"), tier_fg_map.get(tier,"374151"))
+
+    # Conditional formatting on churn_risk column
+    from openpyxl.formatting.rule import ColorScaleRule
+    ws.conditional_formatting.add(
+        f"H3:H22",
+        ColorScaleRule(start_type="num", start_value=0, start_color="D1FAE5",
+                       mid_type="num",   mid_value=0.5,   mid_color="FEF3C7",
+                       end_type="num",   end_value=1,     end_color="FECACA"))
+
+    # Summary stats
+    ws.row_dimensions[24].height = 6
+    section_header(ws, 25, 1, "SEGMENT SUMMARY  ·  LTV & Churn Distribution", C_VIOLET, merge_to=12)
+    seg_hdrs = ["Tier","Customers","Avg Spend","Avg Orders","Avg Churn Risk","Action"]
+    for ci, h in enumerate(seg_hdrs, 1):
+        c = ws.cell(row=26, column=ci, value=h)
+        c.fill = fill(C_VIOLET); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    segs = [
+        ("Champion",5,536.35,8.0,0.044,"Upsell — new categories + VIP events"),
+        ("Loyal",   4,249.76,4.0,0.170,"Cross-sell — recommend complementary SKUs"),
+        ("Active",  4,119.98,2.0,0.415,"Nurture — triggered email + loyalty programme"),
+        ("At Risk", 5,66.00, 1.4,0.722,"Win-back — 20% discount + survey"),
+        ("Lost",    2,24.00, 1.0,0.840,"Suppression — remove from paid acquisition"),
+    ]
+    for ri, (seg, cnt, spend, orders, churn, action) in enumerate(segs, 27):
+        ws.row_dimensions[ri].height = 22
+        bg = C_BG if ri % 2 == 0 else C_WHITE
+        tier_colors2 = {"Champion":C_VIOLET,"Loyal":C_BLUE,"Active":C_GREEN,"At Risk":C_GOLD,"Lost":C_RED}
+        data_cell(ws, ri, 1,  seg,    bold=True, bg=bg, fg=tier_colors2.get(seg,C_NAVY))
+        data_cell(ws, ri, 2,  cnt,    bg=bg, fg=C_NAVY, h="center")
+        data_cell(ws, ri, 3,  spend,  bg=bg, fg=C_NAVY, num_fmt='"$"#,##0.00', h="right")
+        data_cell(ws, ri, 4,  orders, bg=bg, fg=C_NAVY, num_fmt='0.0', h="center")
+        data_cell(ws, ri, 5,  churn,  bg=bg, fg=C_RED if churn>0.5 else C_GOLD if churn>0.2 else C_GREEN, num_fmt='0.00', h="center")
+        data_cell(ws, ri, 6,  action, bg=bg, fg=C_MUTED, wrap=True)
+
+    set_col_widths(ws,{"A":8,"B":18,"C":14,"D":13,"E":10,"F":13,"G":16,"H":12,"I":14,"J":16,"K":14,"L":12})
+    ws.freeze_panes = "A3"
+
+
+# ─── SHEET: ORDER LINE ITEMS ─────────────────────────────────────────────────
+def build_order_line_items(wb):
+    ws = wb.create_sheet("Order Line Items")
+    ws.sheet_properties.tabColor = "0D9488"
+
+    ws.merge_cells("A1:I1")
+    t = ws["A1"]
+    t.value = "ORDER LINE ITEMS  ·  120 Rows (3 items per order)  ·  Transactional / Gold Layer  ·  Consistent with Transactions sheet"
+    t.fill = fill("134E4A"); t.font = font(bold=True, size=12, color=C_WHITE)
+    t.alignment = align("center"); ws.row_dimensions[1].height = 26
+
+    hdrs = ["line_item_id","order_id","product_id","product_name","quantity","unit_price_usd","discount_pct","line_total_usd","category"]
+    for ci, h in enumerate(hdrs, 1):
+        c = ws.cell(row=2, column=ci, value=h)
+        c.fill = fill("0F766E"); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    ws.row_dimensions[2].height = 20
+
+    # 40 orders × 3 items = 120 line items
+    ORDER_ITEMS_BY_ORDER = [
+        ("GMS-20201101-001",[("P-0001","Google Unisex Eco Tee",1,28.00,0.00,"Apparel"),("P-0004","Google Maps Pin Mug",1,18.00,0.00,"Drinkware"),("P-0013","Chrome Notebook A5",2,14.00,0.05,"Stationery")]),
+        ("GMS-20201101-002",[("P-0007","Google Kids Dino Tee",1,22.00,0.00,"Apparel"),("P-0008","Firebase Dev Sticker Pack",1,8.00,0.00,"Stationery"),("P-0021","Google Socks 3-Pack",2,14.00,0.10,"Accessories")]),
+        ("GMS-20201101-003",[("P-0011","GCP Cloud Backpack",1,89.00,0.00,"Bags"),("P-0003","Android Zip Hoodie",1,65.00,0.00,"Apparel"),("P-0009","YouTube Premium Flask",1,34.00,0.00,"Drinkware")]),
+        ("GMS-20201103-001",[("P-0004","Google Maps Pin Mug",1,18.00,0.00,"Drinkware"),("P-0008","Firebase Dev Sticker Pack",1,8.00,0.00,"Stationery"),("P-0013","Chrome Notebook A5",2,14.00,0.05,"Stationery")]),
+        ("GMS-20201107-001",[("P-0001","Google Unisex Eco Tee",2,28.00,0.00,"Apparel"),("P-0004","Google Maps Pin Mug",1,18.00,0.00,"Drinkware"),("P-0021","Google Socks 3-Pack",2,14.00,0.10,"Accessories")]),
+        ("GMS-20201108-001",[("P-0005","Chrome Laptop Sleeve",1,45.00,0.00,"Bags"),("P-0022","Chrome Tote Bag",1,32.00,0.00,"Bags"),("P-0013","Chrome Notebook A5",2,14.00,0.05,"Stationery")]),
+        ("GMS-20201112-001",[("P-0002","YouTube Logo Cap",1,22.00,0.00,"Accessories"),("P-0008","Firebase Dev Sticker Pack",1,8.00,0.00,"Stationery"),("P-0021","Google Socks 3-Pack",1,14.00,0.00,"Accessories")]),
+        ("GMS-20201115-001",[("P-0011","GCP Cloud Backpack",1,89.00,0.00,"Bags"),("P-0020","GCP Polo Shirt",2,38.00,0.00,"Apparel"),("P-0001","Google Unisex Eco Tee",2,28.00,0.05,"Apparel")]),
+        ("GMS-20201115-002",[("P-0002","YouTube Logo Cap",1,22.00,0.00,"Accessories"),("P-0009","YouTube Premium Flask",1,18.00,0.00,"Drinkware"),("P-0008","Firebase Dev Sticker Pack",1,8.00,0.00,"Stationery")]),
+        ("GMS-20201201-001",[("P-0010","Pixel Buds Case",1,29.00,0.00,"Electronics"),("P-0017","Firebase Mug",1,18.00,0.00,"Drinkware"),("P-0013","Chrome Notebook A5",2,14.00,0.05,"Stationery")]),
+    ]
+    # Extend to 40 orders using cycling pattern for remaining 30
+    import itertools
+    extra_orders = [
+        "GMS-20201210-001","GMS-20201215-001","GMS-20201215-002","GMS-20201220-001","GMS-20201224-001",
+        "GMS-20201226-001","GMS-20201231-001","GMS-20210101-001","GMS-20210108-001","GMS-20210115-001",
+        "GMS-20210120-001","GMS-20210125-001","GMS-20210131-001","GMS-20210130-001","GMS-20210205-001",
+        "GMS-20210214-001","GMS-20210301-001","GMS-20210315-001","GMS-20210401-001","GMS-20210501-001",
+        "GMS-20210601-001","GMS-20210701-001","GMS-20210801-001","GMS-20210901-001","GMS-20211001-001",
+        "GMS-20211101-001","GMS-20211201-001","GMS-20220101-001","GMS-20220601-001","GMS-20221201-001",
+    ]
+    item_pool = [
+        [("P-0025","Google Fleece Jacket",1,95.00,0.00,"Apparel"),("P-0020","GCP Polo Shirt",1,38.00,0.00,"Apparel"),("P-0014","Google Sport Bottle",1,26.00,0.00,"Drinkware")],
+        [("P-0003","Android Zip Hoodie",1,65.00,0.00,"Apparel"),("P-0016","Google Mesh Shorts",1,32.00,0.00,"Apparel"),("P-0002","YouTube Logo Cap",1,22.00,0.00,"Accessories")],
+        [("P-0005","Chrome Laptop Sleeve",1,45.00,0.00,"Bags"),("P-0022","Chrome Tote Bag",1,32.00,0.00,"Bags"),("P-0013","Chrome Notebook A5",1,14.00,0.00,"Stationery")],
+        [("P-0018","Google Pixel Stand",1,79.00,0.00,"Electronics"),("P-0010","Pixel Buds Case",1,29.00,0.00,"Electronics"),("P-0004","Google Maps Pin Mug",1,18.00,0.00,"Drinkware")],
+        [("P-0011","GCP Cloud Backpack",1,89.00,0.00,"Bags"),("P-0001","Google Unisex Eco Tee",2,28.00,0.05,"Apparel"),("P-0021","Google Socks 3-Pack",2,14.00,0.10,"Accessories")],
+    ]
+    for i, oid in enumerate(extra_orders):
+        ORDER_ITEMS_BY_ORDER.append((oid, item_pool[i % len(item_pool)]))
+
+    row_num = 3
+    li_counter = 1
+    for order_id, items in ORDER_ITEMS_BY_ORDER:
+        for pid, pname, qty, price, disc, cat in items:
+            line_total = round(qty * price * (1 - disc), 2)
+            bg = C_BG if row_num % 2 == 0 else C_WHITE
+            ws.row_dimensions[row_num].height = 18
+            data_cell(ws, row_num, 1, f"LI-{li_counter:04d}", bold=True, bg=bg, fg=C_TEAL)
+            data_cell(ws, row_num, 2, order_id,  bg=bg, fg=C_BLUE)
+            data_cell(ws, row_num, 3, pid,        bg=bg, fg=C_NAVY)
+            data_cell(ws, row_num, 4, pname,      bg=bg, fg=C_NAVY)
+            data_cell(ws, row_num, 5, qty,        bg=bg, fg=C_NAVY, h="center")
+            data_cell(ws, row_num, 6, price,      bg=bg, fg=C_NAVY, num_fmt='"$"#,##0.00', h="right")
+            data_cell(ws, row_num, 7, disc,       bg=bg, fg=C_MUTED, num_fmt='0%', h="center")
+            data_cell(ws, row_num, 8, line_total, bg=bg, fg=C_NAVY, num_fmt='"$"#,##0.00', h="right",bold=True)
+            data_cell(ws, row_num, 9, cat,        bg=bg, fg=C_MUTED)
+            row_num += 1
+            li_counter += 1
+
+    set_col_widths(ws,{"A":12,"B":22,"C":10,"D":28,"E":9,"F":14,"G":11,"H":14,"I":14})
+    ws.freeze_panes = "A3"
+
+
+# ─── SHEET: DBT MODELS ───────────────────────────────────────────────────────
+def build_dbt_models(wb):
+    ws = wb.create_sheet("dbt Models")
+    ws.sheet_properties.tabColor = "D97706"
+
+    ws.merge_cells("A1:H1")
+    t = ws["A1"]
+    t.value = "DBT TRANSFORMATION MODELS  ·  Bronze → Silver → Gold Medallion Architecture  ·  BigQuery target"
+    t.fill = fill("78350F"); t.font = font(bold=True, size=12, color=C_WHITE)
+    t.alignment = align("center"); ws.row_dimensions[1].height = 26
+
+    # Medallion legend
+    ws.merge_cells("A2:H2")
+    legend = ws["A2"]
+    legend.value = "BRONZE = raw BigQuery export (untransformed)  |  SILVER = staging views (cleaned, typed, deduped)  |  GOLD = mart tables (joined, aggregated, ML-ready)"
+    legend.fill = fill("FEF3C7"); legend.font = font(size=9, color="78350F", italic=True)
+    legend.alignment = align("left","center"); ws.row_dimensions[2].height = 22
+
+    hdrs = ["#","Model Name","Layer","Materialization","Description","Key Columns","Tests","Est. Rows"]
+    for ci, h in enumerate(hdrs, 1):
+        c = ws.cell(row=3, column=ci, value=h)
+        c.fill = fill("78350F"); c.font = font(bold=True, size=10, color=C_WHITE)
+        c.alignment = align("center"); c.border = thin_border()
+    ws.row_dimensions[3].height = 20
+
+    MODELS = [
+        # Bronze (raw)
+        (1,"raw_ga4_events",     "Bronze","external_table","Raw GA4 BigQuery export, partitioned by event_date","event_date, event_name, user_pseudo_id, event_params[]","","13,842,960"),
+        # Silver (staging)
+        (2,"stg_ga4_events",     "Silver","view","Unnests event_params[], SAFE_CASTs revenue, dedupes sessions, derives channel_group","event_date, session_id, event_name, channel_group, revenue_usd","not_null(user_pseudo_id), not_null(event_date), accepted_values(event_name)","13,842,960"),
+        (3,"stg_sessions",       "Silver","view","One row per session: start time, channel, landing page, device, engagement flags","session_id, user_pseudo_id, session_start_ts, landing_page, channel_group","not_null(session_id), unique(session_id)","1,891,200"),
+        (4,"stg_transactions",   "Silver","view","purchase events only: QUALIFY ROW_NUMBER()=1 for dedup, SAFE_CAST revenue","transaction_id, session_id, revenue_usd, item_count, coupon","not_null(transaction_id), unique(transaction_id), revenue>0","34,890"),
+        (5,"stg_items",          "Silver","view","UNNEST(items) from purchase events, one row per item per transaction","transaction_id, item_id, item_name, item_category, price, quantity","not_null(item_id), quantity>0","~104,670"),
+        (6,"stg_users",          "Silver","view","User spine: first_seen, device preference, acquisition source, country","user_pseudo_id, first_seen_date, acquisition_channel, country, device_category","not_null(user_pseudo_id), unique(user_pseudo_id)","743,800"),
+        # Gold (marts)
+        (7,"fact_sessions",      "Gold","table","Session-grain fact: all KPIs, funnel flags, channel attribution","session_id, user_pseudo_id, channel_group, converted, revenue","not_null(session_id), unique(session_id), relationships(stg_users)","1,891,200"),
+        (8,"fact_transactions",  "Gold","table","Transaction-grain: revenue, items, coupon, LTV contribution, GA4 session link","transaction_id, user_pseudo_id, revenue_usd, ltv_contribution","not_null(transaction_id), unique(transaction_id)","34,890"),
+        (9,"fact_customer_ltv",  "Gold","table","Customer-grain: RFM, LTV bands, churn signal, propensity score from BQ ML","user_pseudo_id, ltv_band, rfm_score, churn_flag, propensity_score","not_null(user_pseudo_id), unique(user_pseudo_id), accepted_values(ltv_band)","743,800"),
+        (10,"dim_date",          "Gold","table","Date dimension: calendar, fiscal period, day_of_week, is_weekend, trading_period","date_key, year, month, week, is_weekend, fiscal_period","not_null(date_key), unique(date_key)","1,096"),
+        (11,"dim_product",       "Gold","table","Product dimension: category, brand, margin, active flag","product_id, product_name, category, brand, margin_pct, is_active","not_null(product_id), unique(product_id)","~3,200"),
+        (12,"dim_channel",       "Gold","table","Channel lookup: maps source/medium to channel_group (GA4 default channel grouping)","channel_key, source, medium, channel_group, is_paid","not_null(channel_key)","~80"),
+        # ML models
+        (13,"ml_features_propensity","Gold","table","Feature table for purchase propensity model: session + engagement signals, no leakage","user_pseudo_id, session_count, add_to_cart_count, began_checkout, engagement_msec, label_will_purchase","not_null, no_future_data_leakage_test","743,800"),
+        (14,"ml_features_ltv",   "Gold","table","Feature table for LTV regressor: order history + engagement, target=ltv_90d_usd","user_pseudo_id, total_orders, avg_order_value, days_since_first, label_ltv_90d","relationships(fact_customer_ltv)","34,890"),
+        (15,"ml_churn_risk",     "Gold","table","Churn risk scores from Vertex AI: 90-day no-purchase threshold, daily batch run","user_pseudo_id, churn_score, days_since_purchase, risk_band","not_null(churn_score), expect_between(0,1)","743,800"),
+    ]
+
+    layer_colors = {"Bronze":("92400E","FEF3C7"),"Silver":("1E3A5F","DBEAFE"),"Gold":("7F1D1D","D1FAE5")}
+    layer_bg = {"Bronze":"FEF3C7","Silver":"EFF6FF","Gold":"F0FDF4"}
+
+    for row_data in MODELS:
+        ri = row_data[0] + 3
+        num, name, layer, mat, desc, keys, tests, rows = row_data
+        ws.row_dimensions[ri].height = 36
+        bg = layer_bg.get(layer, C_BG)
+        fg_pair = layer_colors.get(layer, (C_NAVY, bg))
+
+        data_cell(ws, ri, 1, num,  bg=bg, fg=C_MUTED, h="center")
+        data_cell(ws, ri, 2, name, bold=True, bg=bg, fg=fg_pair[0])
+        ws.cell(row=ri, column=2).font = Font(name="Consolas", size=9, color=fg_pair[0], bold=True)
+        badge_cell(ws, ri, 3, layer, fg_pair[1], fg_pair[0])
+        data_cell(ws, ri, 4, mat,   bg=bg, fg=C_TEAL, h="center")
+        data_cell(ws, ri, 5, desc,  bg=bg, fg=C_MUTED, wrap=True)
+        data_cell(ws, ri, 6, keys,  bg="1E293B", fg="BAE6FD", wrap=True)
+        ws.cell(row=ri, column=6).font = Font(name="Consolas", size=8, color="BAE6FD")
+        data_cell(ws, ri, 7, tests, bg=bg, fg=C_GREEN, wrap=True)
+        data_cell(ws, ri, 8, rows,  bg=bg, fg=C_NAVY, h="right")
+
+    # Add layer summary below
+    ws.row_dimensions[20].height = 6
+    section_header(ws, 21, 1, "DAG SCHEDULE  ·  Airflow  ·  06:00 SAST daily  ·  task_group order", "0F766E", merge_to=8)
+    dag_steps = [
+        (22,"extract_google_marketing","Task Group","GCS operator: GA4 export check, Google Ads BATCH pull, DV360/CM360/SA360 transfer","~08 min"),
+        (23,"extract_appsflyer","Task Group","S3ToGCSOperator: mobile event files from AppsFlyer S3 bucket","~05 min"),
+        (24,"extract_ecommerce","Task Group","CloudSQLToGCSOperator: orders, inventory, CRM deltas","~04 min"),
+        (25,"data_quality_checks","Task Group","BigQueryCheckOperator: row counts, null rates, revenue totals vs prior day","~03 min"),
+        (26,"transform_data_fusion","Task Group","DataFusionStartPipelineOperator: PII mask (SHA-256 email), dedup, type cast","~12 min"),
+        (27,"transform_dbt","Task Group","BashOperator: dbt run --select staging.* then marts.* then ml.*","~18 min"),
+        (28,"ml_scoring","Task Group","VertexAIBatchPredictionJobOperator: propensity + churn scores → BQ","~22 min"),
+    ]
+    for ri, (rownum, step, typ, desc, dur) in enumerate(dag_steps, 22):
+        ws.row_dimensions[ri].height = 22
+        bg = C_BG if ri % 2 == 0 else C_WHITE
+        data_cell(ws, ri, 1, f"Step {ri-21}", bg=bg, fg=C_TEAL, bold=True, h="center")
+        data_cell(ws, ri, 2, step, bold=True, bg=bg, fg=C_GOLD)
+        ws.cell(row=ri, column=2).font = Font(name="Consolas", size=9, color=C_GOLD, bold=True)
+        data_cell(ws, ri, 3, typ, bg=bg, fg=C_MUTED, h="center")
+        data_cell(ws, ri, 4, desc, bg=bg, fg=C_MUTED, wrap=True)
+        ws.merge_cells(start_row=ri, start_column=4, end_row=ri, end_column=7)
+        data_cell(ws, ri, 8, dur, bg=bg, fg=C_GREEN, h="center", bold=True)
+
+    set_col_widths(ws,{"A":6,"B":28,"C":10,"D":14,"E":34,"F":36,"G":36,"H":12})
+    ws.freeze_panes = "A4"
+
+
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 def main():
     print("Building GA4 Intelligence Hub Excel workbook...")
@@ -990,8 +1466,18 @@ def main():
     print("  ✓  Traffic & Audience")
     build_bigquery(wb)
     print("  ✓  BigQuery Queries")
+    build_dirty_data(wb)
+    print("  ✓  Raw Data (Dirty) — Bronze layer with quality issues flagged")
+    build_master_products(wb)
+    print("  ✓  Master Products (25 SKUs + category pie chart)")
+    build_master_customers(wb)
+    print("  ✓  Master Customers (20 profiles + churn risk heatmap)")
+    build_order_line_items(wb)
+    print("  ✓  Order Line Items (120 rows — 3 per order)")
+    build_dbt_models(wb)
+    print("  ✓  dbt Models (15 models + Airflow DAG schedule)")
 
-    out = "GA4_Intelligence_Hub_Professional.xlsx"
+    out = "GA4_Intelligence_Hub_Professional_v2.xlsx"
     wb.save(out)
     print(f"\n  ✓  Saved: {out}")
     print(f"  ✓  Sheets: {len(wb.sheetnames)}")

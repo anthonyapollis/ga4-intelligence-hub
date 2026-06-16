@@ -19,6 +19,10 @@
   <nav aria-label="Dashboard sections">
     <a href="#kpis">KPIs</a>
     <a href="#journey">Funnel</a>
+    <a href="#data-layer-arch">Data Layer</a>
+    <a href="#pipeline-arch">Pipeline</a>
+    <a href="#erd">ERD</a>
+    <a href="#data-quality">Data Quality</a>
     <a href="#gtm">GTM</a>
     <a href="#bigquery">BigQuery</a>
     <a href="#ml">ML Models</a>
@@ -113,6 +117,642 @@
       </div>
       <div class="bars" id="eventBars"></div>
     </article>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION: GTM DATA LAYER ARCHITECTURE INFOGRAPHIC
+  ════════════════════════════════════════════════════════════════════════ -->
+  <section id="data-layer-arch" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);padding:48px 32px;border-radius:16px;margin:32px 0;overflow:hidden;position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 50%,rgba(37,99,235,0.12) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(124,58,237,0.10) 0%,transparent 55%);pointer-events:none;"></div>
+    <div style="position:relative;z-index:1;">
+      <p class="eyebrow" style="color:#4361EE;margin-bottom:6px">Google Tag Manager · Architecture Deep Dive</p>
+      <h2 style="color:#F1F5F9;margin:0 0 4px">GTM Data Layer Flow</h2>
+      <p style="color:#94A3B8;font-size:14px;margin:0 0 36px">Browser → GTM Container → GA4 Property → BigQuery — with 9 tags, 10 triggers, 11 variables</p>
+
+      <!-- Animated flow diagram -->
+      <div style="display:grid;grid-template-columns:1fr;gap:0;max-width:900px;margin:0 auto;">
+
+        <!-- LAYER 1: BROWSER -->
+        <div style="background:rgba(37,99,235,0.15);border:1.5px solid rgba(37,99,235,0.5);border-radius:12px 12px 0 0;padding:20px 24px;position:relative;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="background:#2563EB;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;">LAYER 1</span>
+            <strong style="color:#93C5FD;font-size:15px;">Browser — dataLayer</strong>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+            <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(37,99,235,0.4);border-radius:8px;padding:14px;font-family:monospace;font-size:12px;color:#7DD3FC;line-height:1.7;">
+              window.dataLayer = window.dataLayer || [];<br>
+              dataLayer.push({<br>
+              &nbsp;&nbsp;event: <span style="color:#86EFAC">'purchase'</span>,<br>
+              &nbsp;&nbsp;ecommerce: {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;transaction_id: <span style="color:#FCD34D">'T-38291'</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;value: <span style="color:#FCD34D">25.99</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;currency: <span style="color:#FCD34D">'USD'</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;items: [{ item_id: <span style="color:#FCD34D">'P001'</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;quantity: <span style="color:#FCD34D">1</span>, price: <span style="color:#FCD34D">25.99</span> }]<br>
+              &nbsp;&nbsp;}<br>
+              });
+            </div>
+            <div>
+              <p style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px">Triggers fired by dataLayer.push()</p>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="background:rgba(15,23,42,0.6);border-left:3px solid #2563EB;padding:8px 12px;border-radius:0 6px 6px 0;">
+                  <span style="color:#BFDBFE;font-size:12px;font-weight:600;">Pageview Trigger</span>
+                  <p style="color:#64748B;font-size:11px;margin:2px 0 0">All Pages · fires on DOM Ready</p>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);border-left:3px solid #4361EE;padding:8px 12px;border-radius:0 6px 6px 0;">
+                  <span style="color:#BFDBFE;font-size:12px;font-weight:600;">CE — add_to_cart</span>
+                  <p style="color:#64748B;font-size:11px;margin:2px 0 0">Custom Event · event = add_to_cart</p>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);border-left:3px solid #7C3AED;padding:8px 12px;border-radius:0 6px 6px 0;">
+                  <span style="color:#BFDBFE;font-size:12px;font-weight:600;">CE — purchase</span>
+                  <p style="color:#64748B;font-size:11px;margin:2px 0 0">Custom Event · event = purchase</p>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);border-left:3px solid #059669;padding:8px 12px;border-radius:0 6px 6px 0;">
+                  <span style="color:#BFDBFE;font-size:12px;font-weight:600;">CE — view_item</span>
+                  <p style="color:#64748B;font-size:11px;margin:2px 0 0">Custom Event · event = view_item</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 1→2 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0;background:transparent;">
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(37,99,235,0.5),rgba(67,97,238,0.8));"></div>
+          <div style="background:rgba(67,97,238,0.2);border:1px solid rgba(67,97,238,0.5);border-radius:6px;padding:4px 14px;">
+            <span style="color:#93C5FD;font-size:11px;font-weight:600;">Custom Event Trigger fires GTM Tag</span>
+          </div>
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(67,97,238,0.8),rgba(124,58,237,0.5));"></div>
+        </div>
+
+        <!-- LAYER 2: GTM CONTAINER -->
+        <div style="background:rgba(124,58,237,0.12);border:1.5px solid rgba(124,58,237,0.45);border-radius:0;padding:20px 24px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="background:#7C3AED;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;">LAYER 2</span>
+            <strong style="color:#C4B5FD;font-size:15px;">GTM Container: GTM-XXXX9A2</strong>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+            <!-- Tags -->
+            <div>
+              <p style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px">9 Tags</p>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 Config (GOOGTAG)</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 — purchase (GAAWE)</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 — add_to_cart</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 — view_item</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 — begin_checkout</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">GA4 — view_promotion</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">Ads Conversion Tag</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">Consent Mode V2</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#DDD6FE;">Error Logger (Custom HTML)</div>
+              </div>
+            </div>
+            <!-- Triggers -->
+            <div>
+              <p style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px">10 Triggers</p>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">All Pages (Pageview)</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — purchase</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — add_to_cart</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — view_item</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — begin_checkout</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — view_promotion</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — add_payment_info</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">CE — add_shipping_info</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">Consent Accepted</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#BFDBFE;">DOM Ready (checkout)</div>
+              </div>
+            </div>
+            <!-- Variables -->
+            <div>
+              <p style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px">11 Variables</p>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#6EE7B7;">DLV — ecommerce.items</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#6EE7B7;">DLV — transaction_id</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#6EE7B7;">DLV — ecommerce.value</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#6EE7B7;">DLV — ecommerce.currency</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:6px;padding:7px 10px;font-size:11px;color:#6EE7B7;">DLV — ecommerce.coupon</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">URL — Page Path</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">URL — Page Hostname</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">JS — Cookie Consent</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">JS — User Login State</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">1st Party — ga_client_id</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(217,119,6,0.35);border-radius:6px;padding:7px 10px;font-size:11px;color:#FDE68A;">CSS — checkout button</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 2→3 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0;background:transparent;">
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(124,58,237,0.5),rgba(5,150,105,0.8));"></div>
+          <div style="background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.4);border-radius:6px;padding:4px 14px;">
+            <span style="color:#6EE7B7;font-size:11px;font-weight:600;">GA4 Tag fires → sends hit to G-XXXXXXXXXX</span>
+          </div>
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(5,150,105,0.8),rgba(5,150,105,0.3));"></div>
+        </div>
+
+        <!-- LAYER 3: GA4 PROPERTY -->
+        <div style="background:rgba(5,150,105,0.12);border:1.5px solid rgba(5,150,105,0.4);padding:20px 24px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="background:#059669;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;">LAYER 3</span>
+            <strong style="color:#6EE7B7;font-size:15px;">GA4 Property — G-XXXXXXXXXX</strong>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:8px;padding:12px;text-align:center;">
+              <div style="color:#6EE7B7;font-size:22px;font-weight:800;">18</div>
+              <div style="color:#94A3B8;font-size:11px;margin-top:2px;">Events tracked</div>
+            </div>
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:8px;padding:12px;text-align:center;">
+              <div style="color:#6EE7B7;font-size:22px;font-weight:800;">7</div>
+              <div style="color:#94A3B8;font-size:11px;margin-top:2px;">Custom dimensions</div>
+            </div>
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:8px;padding:12px;text-align:center;">
+              <div style="color:#6EE7B7;font-size:22px;font-weight:800;">6</div>
+              <div style="color:#94A3B8;font-size:11px;margin-top:2px;">GA4 Audiences</div>
+            </div>
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(5,150,105,0.3);border-radius:8px;padding:12px;text-align:center;">
+              <div style="color:#6EE7B7;font-size:22px;font-weight:800;">BQ</div>
+              <div style="color:#94A3B8;font-size:11px;margin-top:2px;">Export linked</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 3→4 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0;background:transparent;">
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(5,150,105,0.5),rgba(217,119,6,0.8));"></div>
+          <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.4);border-radius:6px;padding:4px 14px;">
+            <span style="color:#FDE68A;font-size:11px;font-weight:600;">Daily BQ Export → events_YYYYMMDD table</span>
+          </div>
+          <div style="width:2px;height:24px;background:linear-gradient(to bottom,rgba(217,119,6,0.8),rgba(217,119,6,0.3));"></div>
+        </div>
+
+        <!-- LAYER 4: BIGQUERY -->
+        <div style="background:rgba(217,119,6,0.10);border:1.5px solid rgba(217,119,6,0.4);border-radius:0 0 12px 12px;padding:20px 24px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="background:#D97706;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;">LAYER 4</span>
+            <strong style="color:#FDE68A;font-size:15px;">BigQuery — analytics_XXXXXXXXXX.events_YYYYMMDD</strong>
+          </div>
+          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:14px;font-family:monospace;font-size:12px;color:#FDE68A;line-height:1.7;">
+            <span style="color:#94A3B8;">-- UNNEST pattern for ecommerce items</span><br>
+            SELECT event_date, user_pseudo_id,<br>
+            &nbsp;&nbsp;(SELECT value.string_value FROM UNNEST(event_params) WHERE key='transaction_id') AS transaction_id,<br>
+            &nbsp;&nbsp;items.item_id, items.item_name, items.quantity, items.price<br>
+            FROM <span style="color:#86EFAC">`project.analytics_XXX.events_*`</span>,<br>
+            &nbsp;&nbsp;UNNEST(items) AS items<br>
+            WHERE _TABLE_SUFFIX BETWEEN <span style="color:#FCD34D">'20230101'</span> AND <span style="color:#FCD34D">'20231031'</span><br>
+            &nbsp;&nbsp;AND event_name = <span style="color:#FCD34D">'purchase'</span>;
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:20px;margin-top:20px;flex-wrap:wrap;">
+        <span style="color:#64748B;font-size:12px;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#2563EB;display:inline-block;"></span>DLV = DataLayer Variable</span>
+        <span style="color:#64748B;font-size:12px;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#D97706;display:inline-block;"></span>JS / URL = Built-in Variables</span>
+        <span style="color:#64748B;font-size:12px;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#7C3AED;display:inline-block;"></span>CE = Custom Event Trigger</span>
+        <span style="color:#64748B;font-size:12px;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-block;"></span>GAAWE = GA4 Event Tag</span>
+        <span style="color:#64748B;font-size:12px;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#0F766E;display:inline-block;"></span>GOOGTAG = GA4 Configuration Tag</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION: FULL DATA ARCHITECTURE PIPELINE
+  ════════════════════════════════════════════════════════════════════════ -->
+  <section id="pipeline-arch" style="background:linear-gradient(160deg,#0F172A 0%,#1E293B 60%,#0F172A 100%);padding:48px 32px;border-radius:16px;margin:32px 0;overflow:hidden;position:relative;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(67,97,238,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="position:relative;z-index:1;">
+      <p class="eyebrow" style="color:#4361EE;margin-bottom:6px">End-to-End · Data Architecture</p>
+      <h2 style="color:#F1F5F9;margin:0 0 4px">Full Analytics Pipeline</h2>
+      <p style="color:#94A3B8;font-size:14px;margin:0 0 36px">Sources → Ingestion → Raw Zone → Transform → Serving — with dirty data handling and dbt medallion architecture</p>
+
+      <!-- ROW 1: SOURCES -->
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="background:#1E3A5F;color:#93C5FD;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:1px solid rgba(37,99,235,0.4);">ROW 1 — SOURCES</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:110px;background:rgba(37,99,235,0.15);border:1.5px solid rgba(37,99,235,0.4);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📊</div>
+            <div style="color:#93C5FD;font-weight:700;font-size:13px;">GA4</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">G-XXXXXXXXXX</div>
+          </div>
+          <div style="flex:1;min-width:110px;background:rgba(37,99,235,0.12);border:1.5px solid rgba(37,99,235,0.3);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📢</div>
+            <div style="color:#93C5FD;font-weight:700;font-size:13px;">Google Ads</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">Campaign data</div>
+          </div>
+          <div style="flex:1;min-width:110px;background:rgba(124,58,237,0.12);border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📺</div>
+            <div style="color:#C4B5FD;font-weight:700;font-size:13px;">DV360</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">Display &amp; Video</div>
+          </div>
+          <div style="flex:1;min-width:110px;background:rgba(217,119,6,0.12);border:1.5px solid rgba(217,119,6,0.3);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">🎯</div>
+            <div style="color:#FDE68A;font-weight:700;font-size:13px;">CM360</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">Floodlight</div>
+          </div>
+          <div style="flex:1;min-width:110px;background:rgba(220,38,38,0.12);border:1.5px solid rgba(220,38,38,0.3);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">▶️</div>
+            <div style="color:#FCA5A5;font-weight:700;font-size:13px;">YouTube</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">Video analytics</div>
+          </div>
+          <div style="flex:1;min-width:110px;background:rgba(5,150,105,0.12);border:1.5px solid rgba(5,150,105,0.3);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">☁️</div>
+            <div style="color:#6EE7B7;font-weight:700;font-size:13px;">Cloud Storage</div>
+            <div style="color:#64748B;font-size:11px;margin-top:3px;">GCS exports</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div style="text-align:center;padding:6px 0;color:#334155;font-size:20px;">↓</div>
+
+      <!-- ROW 2: INGESTION -->
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="background:#1E293B;color:#C4B5FD;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:1px solid rgba(124,58,237,0.4);">ROW 2 — INGESTION</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;background:rgba(37,99,235,0.1);border:1.5px solid rgba(37,99,235,0.35);border-radius:10px;padding:16px 14px;">
+            <div style="color:#93C5FD;font-weight:700;font-size:13px;margin-bottom:4px;">⚙ Cloud Dataflow</div>
+            <div style="color:#64748B;font-size:11px;line-height:1.5">Apache Beam streaming pipeline · real-time GA4 event ingestion · auto-scaling workers</div>
+          </div>
+          <div style="flex:1;background:rgba(67,97,238,0.1);border:1.5px solid rgba(67,97,238,0.35);border-radius:10px;padding:16px 14px;">
+            <div style="color:#A5B4FC;font-weight:700;font-size:13px;margin-bottom:4px;">🔄 BQ Data Transfer</div>
+            <div style="color:#64748B;font-size:11px;line-height:1.5">BigQuery Data Transfer Service · scheduled Google Ads / DV360 / CM360 imports · daily 03:00</div>
+          </div>
+          <div style="flex:1;background:rgba(124,58,237,0.1);border:1.5px solid rgba(124,58,237,0.35);border-radius:10px;padding:16px 14px;">
+            <div style="color:#C4B5FD;font-weight:700;font-size:13px;margin-bottom:4px;">📱 AppsFlyer API</div>
+            <div style="color:#64748B;font-size:11px;line-height:1.5">Mobile attribution API · postback events → BigQuery via Cloud Functions · hourly sync</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div style="text-align:center;padding:6px 0;color:#334155;font-size:20px;">↓</div>
+
+      <!-- ROW 3: RAW ZONE -->
+      <div style="margin-bottom:8px;display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="background:#1E293B;color:#FCA5A5;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:1px solid rgba(220,38,38,0.4);">ROW 3 — RAW / BRONZE ZONE</span>
+          </div>
+          <div style="background:rgba(220,38,38,0.08);border:1.5px solid rgba(220,38,38,0.3);border-radius:10px;padding:16px 14px;">
+            <div style="color:#FCA5A5;font-weight:700;font-size:14px;margin-bottom:10px;">BigQuery · events_YYYYMMDD</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">NULL event_params — missing ecommerce object</div>
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">Duplicate transaction_id T-38291 (appears twice)</div>
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">Mixed date formats: YYYY-MM-DD vs DD/MM/YYYY</div>
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">String revenue: "$25.50" instead of FLOAT64</div>
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">Wrong event names: "AddToCart" vs "add_to_cart"</div>
+              <div style="background:rgba(220,38,38,0.12);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:6px 10px;font-size:11px;color:#FCA5A5;">Mixed currency encodings: "$", "€", "25,99"</div>
+            </div>
+          </div>
+        </div>
+        <!-- Dirty Data Callout -->
+        <div style="background:rgba(220,38,38,0.06);border:1.5px dashed rgba(220,38,38,0.4);border-radius:10px;padding:16px 14px;">
+          <div style="color:#FCA5A5;font-weight:700;font-size:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Dirty Data Examples</div>
+          <div style="font-family:monospace;font-size:11px;color:#94A3B8;line-height:1.8;">
+            <span style="color:#64748B">event_params:</span> NULL<br>
+            <span style="color:#64748B">transaction_id:</span> "T-38291" ×2<br>
+            <span style="color:#64748B">event_date:</span> "31/01/2021"<br>
+            <span style="color:#64748B">revenue:</span> "$25.50" (STRING)<br>
+            <span style="color:#64748B">event_name:</span> "AddToCart"<br>
+            <span style="color:#64748B">currency:</span> "25,99"<br>
+            <span style="color:#64748B">user_id:</span> "" (empty)
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div style="text-align:center;padding:6px 0;color:#334155;font-size:20px;">↓</div>
+
+      <!-- ROW 4: TRANSFORM -->
+      <div style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="background:#1E293B;color:#6EE7B7;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:1px solid rgba(5,150,105,0.4);">ROW 4 — TRANSFORM / SILVER + GOLD ZONE</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="background:rgba(5,150,105,0.1);border:1.5px solid rgba(5,150,105,0.35);border-radius:10px;padding:14px;">
+              <div style="color:#6EE7B7;font-weight:700;font-size:13px;margin-bottom:3px;">🔮 Cloud Data Fusion</div>
+              <div style="color:#64748B;font-size:11px;">Visual ETL pipeline · handles schema evolution · Wrangler for data cleansing</div>
+            </div>
+            <div style="background:rgba(5,150,105,0.1);border:1.5px solid rgba(5,150,105,0.35);border-radius:10px;padding:14px;">
+              <div style="color:#6EE7B7;font-weight:700;font-size:13px;margin-bottom:3px;">📦 dbt Core</div>
+              <div style="color:#64748B;font-size:11px;">stg_ga4_events → fact_orders → fact_customer_ltv · YAML schema tests · 10 models</div>
+            </div>
+            <div style="background:rgba(5,150,105,0.1);border:1.5px solid rgba(5,150,105,0.35);border-radius:10px;padding:14px;">
+              <div style="color:#6EE7B7;font-weight:700;font-size:13px;margin-bottom:3px;">⏰ Airflow DAG</div>
+              <div style="color:#64748B;font-size:11px;">Cloud Composer 2 · ga4_daily_pipeline · cron: 0 6 * * * · SLA: 120 min</div>
+            </div>
+          </div>
+        </div>
+        <!-- dbt callout -->
+        <div style="background:rgba(5,150,105,0.06);border:1.5px dashed rgba(5,150,105,0.4);border-radius:10px;padding:16px 14px;align-self:start;margin-top:48px;">
+          <div style="color:#6EE7B7;font-weight:700;font-size:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">dbt Transformation Chain</div>
+          <div style="font-family:monospace;font-size:11px;color:#94A3B8;line-height:2;">
+            🥉 <span style="color:#CD7F32">Bronze</span> — events_YYYYMMDD (raw)<br>
+            &nbsp;&nbsp;↓ SAFE_CAST · COALESCE · ROW_NUMBER()<br>
+            🥈 <span style="color:#94A3B8">Silver</span> — stg_ga4_events (clean)<br>
+            &nbsp;&nbsp;↓ JOIN · UNNEST · aggregate<br>
+            🥇 <span style="color:#FDE68A">Gold</span> — fact_orders · fact_customer_ltv
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div style="text-align:center;padding:6px 0;color:#334155;font-size:20px;">↓</div>
+
+      <!-- ROW 5: SERVING -->
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="background:#1E293B;color:#FDE68A;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:1px solid rgba(217,119,6,0.4);">ROW 5 — SERVING LAYER</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:150px;background:rgba(124,58,237,0.1);border:1.5px solid rgba(124,58,237,0.35);border-radius:10px;padding:16px 14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">🤖</div>
+            <div style="color:#C4B5FD;font-weight:700;font-size:13px;">ML Predictions</div>
+            <div style="color:#64748B;font-size:11px;margin-top:4px;line-height:1.4">Propensity AUC 0.73<br>LTV R²=0.81 · Churn AUC 0.78</div>
+          </div>
+          <div style="flex:1;min-width:150px;background:rgba(5,150,105,0.1);border:1.5px solid rgba(5,150,105,0.35);border-radius:10px;padding:16px 14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📈</div>
+            <div style="color:#6EE7B7;font-weight:700;font-size:13px;">Looker Studio</div>
+            <div style="color:#64748B;font-size:11px;margin-top:4px;line-height:1.4">8 dashboards<br>Revenue · Funnel · Audience · LTV</div>
+          </div>
+          <div style="flex:1;min-width:150px;background:rgba(37,99,235,0.1);border:1.5px solid rgba(37,99,235,0.35);border-radius:10px;padding:16px 14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">🔌</div>
+            <div style="color:#93C5FD;font-weight:700;font-size:13px;">API Endpoints</div>
+            <div style="color:#64748B;font-size:11px;margin-top:4px;line-height:1.4">Cloud Run · REST API<br>Real-time propensity scores</div>
+          </div>
+          <div style="flex:1;min-width:150px;background:rgba(217,119,6,0.1);border:1.5px solid rgba(217,119,6,0.35);border-radius:10px;padding:16px 14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📊</div>
+            <div style="color:#FDE68A;font-weight:700;font-size:13px;">BigQuery BI</div>
+            <div style="color:#64748B;font-size:11px;margin-top:4px;line-height:1.4">Connected Sheets<br>Scheduled queries · Data Studio</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION: ENTITY RELATIONSHIP DIAGRAM
+  ════════════════════════════════════════════════════════════════════════ -->
+  <section id="erd" style="background:linear-gradient(135deg,#0F172A 0%,#1A2744 100%);padding:48px 32px;border-radius:16px;margin:32px 0;overflow-x:auto;">
+    <p class="eyebrow" style="color:#4361EE;margin-bottom:6px">Data Model · BigQuery Schema</p>
+    <h2 style="color:#F1F5F9;margin:0 0 4px">Entity Relationship Diagram</h2>
+    <p style="color:#94A3B8;font-size:14px;margin:0 0 28px">6 entities · 5 relationships · GA4 BigQuery export schema</p>
+
+    <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;margin:0 auto;" aria-label="Entity relationship diagram">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4361EE" opacity="0.7"/>
+        </marker>
+        <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#059669" opacity="0.7"/>
+        </marker>
+        <marker id="arrowhead-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#D97706" opacity="0.7"/>
+        </marker>
+      </defs>
+
+      <!-- EVENTS entity (center-top) -->
+      <g>
+        <rect x="330" y="20" width="240" height="170" rx="10" fill="rgba(37,99,235,0.15)" stroke="#2563EB" stroke-width="1.5"/>
+        <rect x="330" y="20" width="240" height="32" rx="10" fill="#2563EB"/>
+        <rect x="330" y="40" width="240" height="12" rx="0" fill="#2563EB"/>
+        <text x="450" y="42" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">events</text>
+        <text x="340" y="72"  fill="#93C5FD" font-size="10.5" font-family="monospace">🔑 event_date + event_name (PK)</text>
+        <text x="340" y="90"  fill="#BFDBFE" font-size="10.5" font-family="monospace">   event_params[]</text>
+        <text x="340" y="106" fill="#BFDBFE" font-size="10.5" font-family="monospace">🔗 user_pseudo_id (FK)</text>
+        <text x="340" y="122" fill="#BFDBFE" font-size="10.5" font-family="monospace">🔗 ga_session_id (FK)</text>
+        <text x="340" y="138" fill="#BFDBFE" font-size="10.5" font-family="monospace">   event_timestamp</text>
+        <text x="340" y="154" fill="#BFDBFE" font-size="10.5" font-family="monospace">   platform · stream_id</text>
+        <text x="340" y="178" fill="#60A5FA" font-size="10" font-family="monospace">13,842,960 rows</text>
+      </g>
+
+      <!-- USERS entity (top-left) -->
+      <g>
+        <rect x="20" y="20" width="220" height="160" rx="10" fill="rgba(5,150,105,0.12)" stroke="#059669" stroke-width="1.5"/>
+        <rect x="20" y="20" width="220" height="32" rx="10" fill="#059669"/>
+        <rect x="20" y="40" width="220" height="12" rx="0" fill="#059669"/>
+        <text x="130" y="42" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">users</text>
+        <text x="30" y="72"  fill="#6EE7B7" font-size="10.5" font-family="monospace">🔑 user_pseudo_id (PK)</text>
+        <text x="30" y="88"  fill="#A7F3D0" font-size="10.5" font-family="monospace">   first_seen</text>
+        <text x="30" y="104" fill="#A7F3D0" font-size="10.5" font-family="monospace">   device_category</text>
+        <text x="30" y="120" fill="#A7F3D0" font-size="10.5" font-family="monospace">   geo_country</text>
+        <text x="30" y="136" fill="#A7F3D0" font-size="10.5" font-family="monospace">   traffic_source</text>
+        <text x="30" y="152" fill="#A7F3D0" font-size="10.5" font-family="monospace">   ltv_tier · churn_score</text>
+        <text x="30" y="170" fill="#34D399" font-size="10" font-family="monospace">743,800 rows</text>
+      </g>
+
+      <!-- SESSIONS entity (top-right) -->
+      <g>
+        <rect x="660" y="20" width="220" height="165" rx="10" fill="rgba(124,58,237,0.12)" stroke="#7C3AED" stroke-width="1.5"/>
+        <rect x="660" y="20" width="220" height="32" rx="10" fill="#7C3AED"/>
+        <rect x="660" y="40" width="220" height="12" rx="0" fill="#7C3AED"/>
+        <text x="770" y="42" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">sessions</text>
+        <text x="670" y="72"  fill="#C4B5FD" font-size="10.5" font-family="monospace">🔑 ga_session_id (PK)</text>
+        <text x="670" y="88"  fill="#DDD6FE" font-size="10.5" font-family="monospace">🔗 user_pseudo_id (FK)</text>
+        <text x="670" y="104" fill="#DDD6FE" font-size="10.5" font-family="monospace">   session_start</text>
+        <text x="670" y="120" fill="#DDD6FE" font-size="10.5" font-family="monospace">   session_end</text>
+        <text x="670" y="136" fill="#DDD6FE" font-size="10.5" font-family="monospace">   channel_group</text>
+        <text x="670" y="152" fill="#DDD6FE" font-size="10.5" font-family="monospace">   landing_page</text>
+        <text x="670" y="170" fill="#A78BFA" font-size="10" font-family="monospace">1,891,200 rows</text>
+      </g>
+
+      <!-- TRANSACTIONS entity (center-bottom) -->
+      <g>
+        <rect x="310" y="330" width="260" height="165" rx="10" fill="rgba(217,119,6,0.12)" stroke="#D97706" stroke-width="1.5"/>
+        <rect x="310" y="330" width="260" height="32" rx="10" fill="#D97706"/>
+        <rect x="310" y="350" width="260" height="12" rx="0" fill="#D97706"/>
+        <text x="440" y="352" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">transactions</text>
+        <text x="320" y="382" fill="#FDE68A" font-size="10.5" font-family="monospace">🔑 transaction_id (PK)</text>
+        <text x="320" y="398" fill="#FEF3C7" font-size="10.5" font-family="monospace">🔗 ga_session_id (FK)</text>
+        <text x="320" y="414" fill="#FEF3C7" font-size="10.5" font-family="monospace">   order_date · revenue</text>
+        <text x="320" y="430" fill="#FEF3C7" font-size="10.5" font-family="monospace">   currency · shipping · tax</text>
+        <text x="320" y="446" fill="#FEF3C7" font-size="10.5" font-family="monospace">   coupon · items[]</text>
+        <text x="320" y="480" fill="#FBBF24" font-size="10" font-family="monospace">34,890 rows · $891,480 total</text>
+      </g>
+
+      <!-- ITEMS entity (bottom-right) -->
+      <g>
+        <rect x="640" y="330" width="240" height="165" rx="10" fill="rgba(220,38,38,0.12)" stroke="#DC2626" stroke-width="1.5"/>
+        <rect x="640" y="330" width="240" height="32" rx="10" fill="#DC2626"/>
+        <rect x="640" y="350" width="240" height="12" rx="0" fill="#DC2626"/>
+        <text x="760" y="352" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">items</text>
+        <text x="650" y="382" fill="#FCA5A5" font-size="10.5" font-family="monospace">🔑 item_id (PK)</text>
+        <text x="650" y="398" fill="#FECACA" font-size="10.5" font-family="monospace">🔗 transaction_id (FK)</text>
+        <text x="650" y="414" fill="#FECACA" font-size="10.5" font-family="monospace">   item_name · item_category</text>
+        <text x="650" y="430" fill="#FECACA" font-size="10.5" font-family="monospace">   quantity · price</text>
+        <text x="650" y="446" fill="#FECACA" font-size="10.5" font-family="monospace">   discount · brand</text>
+        <text x="650" y="480" fill="#F87171" font-size="10" font-family="monospace">~104,670 line items</text>
+      </g>
+
+      <!-- GTM_TAGS entity (bottom-left) -->
+      <g>
+        <rect x="20" y="330" width="220" height="165" rx="10" fill="rgba(7,118,110,0.12)" stroke="#0F766E" stroke-width="1.5"/>
+        <rect x="20" y="330" width="220" height="32" rx="10" fill="#0F766E"/>
+        <rect x="20" y="350" width="220" height="12" rx="0" fill="#0F766E"/>
+        <text x="130" y="352" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="monospace">gtm_tags</text>
+        <text x="30" y="382" fill="#5EEAD4" font-size="10.5" font-family="monospace">🔑 tag_id (PK)</text>
+        <text x="30" y="398" fill="#99F6E4" font-size="10.5" font-family="monospace">🔗 trigger_id (FK)</text>
+        <text x="30" y="414" fill="#99F6E4" font-size="10.5" font-family="monospace">   tag_type · tag_name</text>
+        <text x="30" y="430" fill="#99F6E4" font-size="10.5" font-family="monospace">   fires_on</text>
+        <text x="30" y="446" fill="#99F6E4" font-size="10.5" font-family="monospace">   consent_mode · status</text>
+        <text x="30" y="480" fill="#2DD4BF" font-size="10" font-family="monospace">9 tags · 10 triggers</text>
+      </g>
+
+      <!-- RELATIONSHIP LINES -->
+      <!-- events → users (many-to-one): events left edge → users right edge -->
+      <line x1="330" y1="105" x2="244" y2="100" stroke="#059669" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-green)" opacity="0.8"/>
+      <text x="280" y="95" fill="#6EE7B7" font-size="9" text-anchor="middle" font-family="monospace">N:1 user_pseudo_id</text>
+
+      <!-- events → sessions (many-to-one): events right edge → sessions left edge -->
+      <line x1="570" y1="105" x2="658" y2="105" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead)" opacity="0.8"/>
+      <text x="614" y="98" fill="#C4B5FD" font-size="9" text-anchor="middle" font-family="monospace">N:1 session_id</text>
+
+      <!-- sessions → transactions (one-to-many): sessions bottom → transactions top-right -->
+      <line x1="770" y1="188" x2="560" y2="328" stroke="#D97706" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-amber)" opacity="0.8"/>
+      <text x="690" y="270" fill="#FDE68A" font-size="9" text-anchor="middle" font-family="monospace">1:N session_id</text>
+
+      <!-- transactions → items (one-to-many): transactions right → items left -->
+      <line x1="572" y1="415" x2="638" y2="415" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead)" opacity="0.8"/>
+      <text x="606" y="408" fill="#FCA5A5" font-size="9" text-anchor="middle" font-family="monospace">1:N txn_id</text>
+
+      <!-- gtm_tags → events (one-to-many): gtm_tags top → events bottom-left -->
+      <line x1="130" y1="328" x2="370" y2="192" stroke="#0F766E" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead)" opacity="0.8"/>
+      <text x="230" y="270" fill="#5EEAD4" font-size="9" text-anchor="middle" font-family="monospace">fires → events</text>
+    </svg>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:20px;margin-top:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+      <span style="color:#64748B;font-size:12px;">🔑 = Primary Key</span>
+      <span style="color:#64748B;font-size:12px;">🔗 = Foreign Key</span>
+      <span style="color:#64748B;font-size:12px;">--- = relationship line (dashed)</span>
+      <span style="color:#64748B;font-size:12px;">N:1 = many events → one user/session</span>
+      <span style="color:#64748B;font-size:12px;">1:N = one session → many transactions</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION: DIRTY DATA → CLEAN PIPELINE
+  ════════════════════════════════════════════════════════════════════════ -->
+  <section id="data-quality" style="background:linear-gradient(160deg,#0F172A 0%,#1E293B 100%);padding:48px 32px;border-radius:16px;margin:32px 0;">
+    <p class="eyebrow" style="color:#059669;margin-bottom:6px">dbt · Data Quality Engineering</p>
+    <h2 style="color:#F1F5F9;margin:0 0 4px">Dirty Data → Clean Pipeline</h2>
+    <p style="color:#94A3B8;font-size:14px;margin:0 0 28px">Raw BigQuery export issues detected, transformed, and tested using dbt staging models</p>
+
+    <!-- Medallion badges -->
+    <div style="display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;">
+      <div style="background:rgba(205,127,50,0.15);border:1.5px solid rgba(205,127,50,0.4);border-radius:10px;padding:12px 20px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:2px;">🥉</div>
+        <div style="color:#CD7F32;font-weight:700;font-size:13px;">Bronze</div>
+        <div style="color:#64748B;font-size:11px;margin-top:2px;">Raw · events_YYYYMMDD</div>
+      </div>
+      <div style="color:#334155;font-size:24px;display:flex;align-items:center;">→</div>
+      <div style="background:rgba(148,163,184,0.1);border:1.5px solid rgba(148,163,184,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:2px;">🥈</div>
+        <div style="color:#94A3B8;font-weight:700;font-size:13px;">Silver</div>
+        <div style="color:#64748B;font-size:11px;margin-top:2px;">Staged · stg_ga4_events</div>
+      </div>
+      <div style="color:#334155;font-size:24px;display:flex;align-items:center;">→</div>
+      <div style="background:rgba(253,224,71,0.1);border:1.5px solid rgba(253,224,71,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:2px;">🥇</div>
+        <div style="color:#FDE68A;font-weight:700;font-size:13px;">Gold</div>
+        <div style="color:#64748B;font-size:11px;margin-top:2px;">Mart · fact_orders · fact_customer_ltv</div>
+      </div>
+    </div>
+
+    <!-- Before / After table -->
+    <div style="overflow-x:auto;margin-bottom:32px;">
+      <table style="width:100%;min-width:700px;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="background:#1E293B;color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.07);">Row</th>
+            <th style="background:#1E293B;color:#FCA5A5;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.07);">Raw (Dirty) — Bronze</th>
+            <th style="background:#1E293B;color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">Issue</th>
+            <th style="background:#1E293B;color:#6EE7B7;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.07);">Cleaned — dbt Staging Fix</th>
+          </tr>
+        </thead>
+        <tbody id="dataQualityTable">
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:10px 14px;color:#64748B;font-size:12px;">1</td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#FCA5A5;background:rgba(220,38,38,0.06);">event_params: <span style="color:#DC2626;font-weight:700;">NULL</span></td>
+            <td style="padding:10px 14px;text-align:center;"><span style="background:rgba(220,38,38,0.2);color:#FCA5A5;font-size:10px;padding:2px 8px;border-radius:4px;">NULL params</span></td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#6EE7B7;background:rgba(5,150,105,0.06);">COALESCE(ecommerce_object, NULL) — row retained</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:10px 14px;color:#64748B;font-size:12px;">2</td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#FCA5A5;background:rgba(220,38,38,0.06);">event_date: <span style="color:#DC2626;font-weight:700;">"31/01/2021"</span>, revenue: <span style="color:#DC2626;font-weight:700;">"$25.50"</span></td>
+            <td style="padding:10px 14px;text-align:center;"><span style="background:rgba(220,38,38,0.2);color:#FCA5A5;font-size:10px;padding:2px 8px;border-radius:4px;">Bad date + string $</span></td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#6EE7B7;background:rgba(5,150,105,0.06);">PARSE_DATE('%d/%m/%Y'); SAFE_CAST(revenue AS FLOAT64)</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:10px 14px;color:#64748B;font-size:12px;">3</td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#FCA5A5;background:rgba(220,38,38,0.06);">transaction_id: <span style="color:#DC2626;font-weight:700;">"T-38291" (appears twice)</span></td>
+            <td style="padding:10px 14px;text-align:center;"><span style="background:rgba(220,38,38,0.2);color:#FCA5A5;font-size:10px;padding:2px 8px;border-radius:4px;">Duplicate txn</span></td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#6EE7B7;background:rgba(5,150,105,0.06);">QUALIFY ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY event_timestamp DESC) = 1</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:10px 14px;color:#64748B;font-size:12px;">4</td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#FCA5A5;background:rgba(220,38,38,0.06);">event_name: <span style="color:#DC2626;font-weight:700;">"AddToCart"</span> (wrong case)</td>
+            <td style="padding:10px 14px;text-align:center;"><span style="background:rgba(220,38,38,0.2);color:#FCA5A5;font-size:10px;padding:2px 8px;border-radius:4px;">Bad event name</span></td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#6EE7B7;background:rgba(5,150,105,0.06);">LOWER(TRIM(event_name)); dbt accepted_values test</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:10px 14px;color:#64748B;font-size:12px;">5</td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#FCA5A5;background:rgba(220,38,38,0.06);">revenue: <span style="color:#DC2626;font-weight:700;">"€18.99"</span> (currency symbol)</td>
+            <td style="padding:10px 14px;text-align:center;"><span style="background:rgba(220,38,38,0.2);color:#FCA5A5;font-size:10px;padding:2px 8px;border-radius:4px;">Mixed currency</span></td>
+            <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#6EE7B7;background:rgba(5,150,105,0.06);">REGEXP_REPLACE(revenue, r'[^0-9.]', ''); SAFE_CAST AS FLOAT64</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- dbt test rules grid -->
+    <p style="color:#F1F5F9;font-size:15px;font-weight:700;margin:0 0 14px">4 dbt Data Quality Tests Applied</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:28px;">
+      <div style="background:rgba(37,99,235,0.1);border:1.5px solid rgba(37,99,235,0.3);border-radius:10px;padding:16px;">
+        <div style="color:#93C5FD;font-weight:700;font-size:13px;margin-bottom:6px;">not_null</div>
+        <div style="color:#64748B;font-size:12px;line-height:1.5">Flags: event_date, user_pseudo_id, event_name, revenue (purchase events only)</div>
+      </div>
+      <div style="background:rgba(5,150,105,0.1);border:1.5px solid rgba(5,150,105,0.3);border-radius:10px;padding:16px;">
+        <div style="color:#6EE7B7;font-weight:700;font-size:13px;margin-bottom:6px;">unique</div>
+        <div style="color:#64748B;font-size:12px;line-height:1.5">Ensures: transaction_id unique in fact_orders; ga_session_id unique in fact_sessions</div>
+      </div>
+      <div style="background:rgba(124,58,237,0.1);border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:16px;">
+        <div style="color:#C4B5FD;font-weight:700;font-size:13px;margin-bottom:6px;">accepted_values</div>
+        <div style="color:#64748B;font-size:12px;line-height:1.5">Validates: event_name in [page_view, purchase, add_to_cart...]; currency in [USD, EUR, GBP]</div>
+      </div>
+      <div style="background:rgba(217,119,6,0.1);border:1.5px solid rgba(217,119,6,0.3);border-radius:10px;padding:16px;">
+        <div style="color:#FDE68A;font-weight:700;font-size:13px;margin-bottom:6px;">relationships</div>
+        <div style="color:#64748B;font-size:12px;line-height:1.5">Checks: every transaction_id in items exists in fact_orders; every session_id in events exists in sessions</div>
+      </div>
+    </div>
+
+    <!-- dbt YAML snippet -->
+    <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;font-family:monospace;font-size:12px;color:#94A3B8;line-height:1.8;overflow-x:auto;">
+      <span style="color:#64748B"># models/staging/schema.yml</span><br>
+      <span style="color:#6EE7B7">models:</span><br>
+      &nbsp;&nbsp;<span style="color:#93C5FD">- name:</span> <span style="color:#FDE68A">stg_ga4_events</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#93C5FD">columns:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#C4B5FD">- name:</span> event_date<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">tests: [<span style="color:#FCA5A5">not_null</span>]</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#C4B5FD">- name:</span> event_name<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">tests:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">- <span style="color:#FCA5A5">not_null</span></span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">- <span style="color:#FCA5A5">accepted_values</span>:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">values: [page_view, purchase, add_to_cart, begin_checkout, view_item, ...]</span><br>
+      &nbsp;&nbsp;<span style="color:#93C5FD">- name:</span> <span style="color:#FDE68A">fact_orders</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#93C5FD">columns:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#C4B5FD">- name:</span> transaction_id<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">tests: [<span style="color:#FCA5A5">not_null</span>, <span style="color:#FCA5A5">unique</span>]</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#C4B5FD">- name:</span> revenue<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94A3B8">tests: [<span style="color:#FCA5A5">not_null</span>, dbt_expectations.expect_column_values_to_be_between(0, 10000)]</span>
+    </div>
   </section>
 
   <!-- GTM CONTAINER CONSOLE -->
